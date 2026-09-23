@@ -1,0 +1,27 @@
+{
+  "name": "glpi-plugin/assignmentguard",
+  "description": "Preventive group-assignment compatibility guard for GLPI 10.",
+  "require": {
+    "php": ">=7.4"
+  },
+  "require-dev": {
+    "glpi-project/tools": "^0.8",
+    "phpunit/phpunit": "^9.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "GlpiPlugin\\Assignmentguard\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "platform": {
+      "php": "7.4.0"
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": "php tests/unit.php",
+    "lint": "find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l"
+  }
+}

@@ -1,0 +1,11 @@
+<root>
+  <name>Assignment Guard</name>
+  <key>assignmentguard</key>
+  <state>development</state>
+  <description>
+    <short><en>Preventive ticket assignment compatibility guard.</en></short>
+  </description>
+  <versions>
+    <version><num>0.1.0</num><compatibility>10.0</compatibility></version>
+  </versions>
+</root>

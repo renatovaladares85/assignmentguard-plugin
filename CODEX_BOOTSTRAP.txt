@@ -1,0 +1,8 @@
+Leia AGENTS.md, PROMPT_CODEX.md e todos os arquivos em docs/.
+Implemente o MVP do Assignment Guard por fases, começando pelo inventário do repositório e pelo skeleton GLPI 10.
+Continue automaticamente enquanto os gates passarem.
+Não altere core nem plugins de terceiros.
+Não use correções persistentes posteriores, RuleTicketCollection, Ticket::update corretivo ou SQL em atores.
+Mantenha compatibilidade GLPI 10.0.20–10.0.26, PHP 7.4 syntax, Behaviors 2.7.8 e Escalade 2.9.18–2.9.22.
+Ambiguidade ou integração não segura deve resultar em NO-OP com log obrigatório.
+Ao final, reporte arquivos, testes, matriz executada, evidências e pendências.
