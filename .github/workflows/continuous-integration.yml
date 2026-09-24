@@ -49,9 +49,14 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: glpi/plugins/assignmentguard
+      - name: Prepare GLPI workspace
+        working-directory: glpi
+        run: |
+          make init-override
+          sudo chown -R 1000:1000 .
       - name: Start GLPI 10.0.20
         working-directory: glpi
-        run: make install
+        run: make build up vendor db-install test-db-install
       - name: Verify discovery and lifecycle
         working-directory: glpi
         run: |
