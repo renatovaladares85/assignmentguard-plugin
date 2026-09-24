@@ -57,9 +57,12 @@ class Toolbox
 }
 
 require_once dirname(__DIR__) . '/src/autoload.php';
+require_once dirname(__DIR__) . '/setup.php';
+require_once dirname(__DIR__) . '/hook.php';
 
 use GlpiPlugin\Assignmentguard\AssignmentGuardHookHandler;
 use GlpiPlugin\Assignmentguard\DecisionLogger;
+use GlpiPlugin\Assignmentguard\PluginConfig;
 use GlpiPlugin\Assignmentguard\PolicyResolver;
 
 function expect($condition, $message)
@@ -77,6 +80,29 @@ function makeTicket($groups, $input)
     $ticket->input = $input;
     return $ticket;
 }
+
+$PLUGIN_HOOKS = [];
+plugin_init_assignmentguard();
+expect($PLUGIN_HOOKS['csrf_compliant']['assignmentguard'] === true, 'P1 CSRF hook');
+expect($PLUGIN_HOOKS['config_page']['assignmentguard'] === 'front/config.form.php', 'P1 config page hook');
+expect(isset($PLUGIN_HOOKS['pre_item_update']['assignmentguard']['Ticket']), 'P1 ticket hook registration');
+
+$version = plugin_version_assignmentguard();
+expect($version['requirements']['glpi']['min'] === '10.0.20', 'P1 GLPI minimum');
+expect($version['requirements']['glpi']['max'] === '10.0.27', 'P1 GLPI exclusive maximum');
+expect(!isset($version['requirements']['database']), 'P1 must not require a database version');
+expect($version['author'] === '' && $version['license'] === '' && $version['homepage'] === '', 'P1 public metadata remains undecided');
+expect(plugin_assignmentguard_check_prerequisites(), 'P1 prerequisites');
+expect(plugin_assignmentguard_check_config(), 'P1 configuration check');
+
+Config::$values = ['third_party_setting' => 'preserved'];
+expect(plugin_assignmentguard_install(), 'P1 install');
+expect(Config::$values['standalone_group_replacement'] === '1', 'P1 install default');
+PluginConfig::save(['diagnostic_logging' => '1', 'third_party_setting' => '1']);
+expect(Config::$values['diagnostic_logging'] === '1', 'P1 save own configuration');
+expect(Config::$values['third_party_setting'] === 'preserved', 'P1 must not write third-party configuration');
+expect(plugin_assignmentguard_uninstall(), 'P1 uninstall');
+expect(Config::$values === ['third_party_setting' => 'preserved'], 'P1 uninstall only removes plugin configuration');
 
 Config::$values = [
     'standalone_group_replacement' => '1',
