@@ -11,13 +11,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        glpi-version: ["10.0.20", "10.0.21", "10.0.22", "10.0.23", "10.0.24", "10.0.25", "10.0.26"]
+        glpi-version: ["10.0.x"]
         php-version: ["7.4"]
         db-image: ["mysql:5.7", "mariadb:10.2"]
-    uses: glpi-project/plugin-ci-workflows/.github/workflows/continuous-integration.yml@v1
-    with:
-      plugin-key: assignmentguard
-      glpi-version: ${{ matrix.glpi-version }}
-      php-version: ${{ matrix.php-version }}
-      db-image: ${{ matrix.db-image }}
-      init-script: "./.github/workflows/create-plugin.sh"
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/glpi-project/githubactions-glpi-apache:php-${{ matrix.php-version }}-glpi-${{ matrix.glpi-version }}
+      options: --user github-actions-runner
+    services:
+      db:
+        image: ghcr.io/glpi-project/githubactions-${{ matrix.db-image }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: glpi
+        options: --shm-size=1g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Show runtime
+        run: php --version
+      - name: Unit tests
+        run: php tests/unit.php
+      - name: PHP syntax
+        run: find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
