@@ -60,7 +60,7 @@ class PluginBehaviorsConfig
 class Toolbox
 {
     public static $lines = [];
-    public static function logInFile($name, $line, $append) { self::$lines[] = [$name, $line]; }
+    public static function logInFile($name, $line, $append) { self::$lines[] = [$name, $line, $append]; }
 }
 
 require_once dirname(__DIR__) . '/src/autoload.php';
@@ -125,7 +125,11 @@ Config::$values = [
 Plugin::$active = [];
 
 $events = [];
-DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$events) { $events[] = $decision; });
+$lines = [];
+DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$events, &$lines) {
+    $events[] = $decision;
+    $lines[] = $line;
+});
 
 $actorA = ['itemtype' => 'Group', 'items_id' => 10];
 $actorB = ['itemtype' => 'Group', 'items_id' => 20];
@@ -164,8 +168,16 @@ AssignmentGuardHookHandler::handle($ticket);
 expect(end($events)['decision'] === 'NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT', 'A7 decision');
 
 $ticket = makeTicket($groupsA, []);
+$eventsBefore = count($events);
 AssignmentGuardHookHandler::handle($ticket);
+expect(count($events) === $eventsBefore + 1, 'A8 must write exactly one decision');
 expect(end($events)['decision'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A8 decision');
+$record = json_decode(end($lines), true);
+expect($record['ticket_id'] === 42 && $record['acted'] === false, 'A8 minimum technical data');
+expect(count(array_diff(array_keys($record), [
+    'ticket_id', 'acted', 'policy_source', 'existing_groups', 'input_groups', 'added_groups',
+    'removed_groups', 'decision', 'timestamp', 'plugin_version', 'glpi_version',
+])) === 0, 'A8 log must contain technical fields only');
 
 $ticket = makeTicket($groupsA, ['_groups_id_assign' => [10, 20]]);
 AssignmentGuardHookHandler::handle($ticket);
@@ -223,8 +235,44 @@ $ticket = new ThrowingTicket();
 $ticket->fields = ['id' => 99];
 $ticket->input = ['_actors' => ['assign' => [$actorA, $actorB]]];
 $before = $ticket->input;
+$eventsBefore = count($events);
 AssignmentGuardHookHandler::handle($ticket);
 expect($ticket->input === $before, 'Fail-open must restore the original input');
+expect(count($events) === $eventsBefore + 1, 'Fail-open must write exactly one decision');
 expect(end($events)['decision'] === 'ERROR_INTERNAL', 'Fail-open decision');
+
+DecisionLogger::setWriterForTests(static function () { throw new RuntimeException('simulated log failure'); });
+$ticket = new ThrowingTicket();
+$ticket->fields = ['id' => 100];
+$ticket->input = ['_actors' => ['assign' => [$actorA, $actorB]]];
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Logger failure must not block native flow');
+
+$writeAttempts = [];
+$failFirstWrite = true;
+Plugin::$active = [];
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '0';
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '0';
+DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$writeAttempts, &$failFirstWrite) {
+    $writeAttempts[] = $decision['decision'];
+    if ($failFirstWrite) {
+        $failFirstWrite = false;
+        throw new RuntimeException('simulated acted logging failure');
+    }
+});
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Acted logging failure must restore the original input');
+expect($writeAttempts === ['ACTED_GROUP_REPLACEMENT', 'ERROR_INTERNAL'], 'Acted logging failure must attempt ERROR_INTERNAL');
+
+DecisionLogger::setWriterForTests(null);
+Toolbox::$lines = [];
+$ticket = makeTicket($groupsA, []);
+AssignmentGuardHookHandler::handle($ticket);
+expect(count(Toolbox::$lines) === 1, 'GLPI logger must receive one decision');
+expect(Toolbox::$lines[0][0] === 'assignmentguard' && Toolbox::$lines[0][2] === true, 'GLPI logger target');
+expect(is_array(json_decode(Toolbox::$lines[0][1], true)), 'GLPI logger JSON line');
 
 echo "OK: " . count($events) . " decision cases validated\n";
