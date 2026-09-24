@@ -77,7 +77,7 @@ final class ActorInputParser
     private function parseLegacyGroups(array $input, array $existing): array
     {
         $value = $input['_groups_id_assign'];
-        if (is_numeric($value)) {
+        if (is_int($value) || (is_string($value) && ctype_digit($value))) {
             $value = [(int) $value];
         }
         if (!is_array($value)) {
