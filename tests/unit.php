@@ -30,9 +30,16 @@ class Ticket
 class Config
 {
     public static $values = [];
-    public static function getConfigurationValues($context, $names = []) { return self::$values; }
-    public static function setConfigurationValues($context, $values = []) { self::$values = array_merge(self::$values, $values); }
-    public static function deleteConfigurationValues($context, $values = []) { foreach ($values as $value) { unset(self::$values[$value]); } }
+    public static function getConfigurationValues($context, $names = []) {
+        $values = self::$values[$context] ?? [];
+        return $names ? array_intersect_key($values, array_flip($names)) : $values;
+    }
+    public static function setConfigurationValues($context, $values = []) {
+        self::$values[$context] = array_merge(self::$values[$context] ?? [], $values);
+    }
+    public static function deleteConfigurationValues($context, $values = []) {
+        foreach ($values as $value) { unset(self::$values[$context][$value]); }
+    }
 }
 
 class Plugin
@@ -85,7 +92,7 @@ $PLUGIN_HOOKS = [];
 plugin_init_assignmentguard();
 expect($PLUGIN_HOOKS['csrf_compliant']['assignmentguard'] === true, 'P1 CSRF hook');
 expect($PLUGIN_HOOKS['config_page']['assignmentguard'] === 'front/config.form.php', 'P1 config page hook');
-expect(isset($PLUGIN_HOOKS['pre_item_update']['assignmentguard']['Ticket']), 'P1 ticket hook registration');
+expect($PLUGIN_HOOKS['pre_item_update']['assignmentguard']['Ticket'] === 'plugin_assignmentguard_pre_item_update', 'P1 ticket hook callback');
 
 $version = plugin_version_assignmentguard();
 expect($version['requirements']['glpi']['min'] === '10.0.20', 'P1 GLPI minimum');
@@ -95,20 +102,25 @@ expect($version['author'] === '' && $version['license'] === '' && $version['home
 expect(plugin_assignmentguard_check_prerequisites(), 'P1 prerequisites');
 expect(plugin_assignmentguard_check_config(), 'P1 configuration check');
 
-Config::$values = ['third_party_setting' => 'preserved'];
+Config::$values = [
+    'plugin:other' => ['third_party_setting' => 'preserved'],
+];
 expect(plugin_assignmentguard_install(), 'P1 install');
-expect(Config::$values['standalone_group_replacement'] === '1', 'P1 install default');
+expect(Config::$values[PluginConfig::CONTEXT]['standalone_group_replacement'] === '1', 'P1 install default');
 PluginConfig::save(['diagnostic_logging' => '1', 'third_party_setting' => '1']);
-expect(Config::$values['diagnostic_logging'] === '1', 'P1 save own configuration');
-expect(Config::$values['third_party_setting'] === 'preserved', 'P1 must not write third-party configuration');
+expect(Config::$values[PluginConfig::CONTEXT]['diagnostic_logging'] === '1', 'P1 save own configuration');
+expect(Config::$values['plugin:other']['third_party_setting'] === 'preserved', 'P1 must not write third-party configuration');
 expect(plugin_assignmentguard_uninstall(), 'P1 uninstall');
-expect(Config::$values === ['third_party_setting' => 'preserved'], 'P1 uninstall only removes plugin configuration');
+expect(Config::$values[PluginConfig::CONTEXT] === [], 'P1 uninstall removes plugin configuration');
+expect(Config::$values['plugin:other'] === ['third_party_setting' => 'preserved'], 'P1 uninstall preserves another context');
 
 Config::$values = [
-    'standalone_group_replacement' => '1',
-    'integration_behaviors_enabled' => '0',
-    'integration_escalade_enabled' => '0',
-    'diagnostic_logging' => '0',
+    PluginConfig::CONTEXT => [
+        'standalone_group_replacement' => '1',
+        'integration_behaviors_enabled' => '0',
+        'integration_escalade_enabled' => '0',
+        'diagnostic_logging' => '0',
+    ],
 ];
 Plugin::$active = [];
 
@@ -163,7 +175,7 @@ expect(end($events)['decision'] === 'ACTED_GROUP_REPLACEMENT', 'Legacy decision'
 
 Plugin::$active = ['behaviors' => true];
 Plugin::$info = ['behaviors' => ['version' => '2.7.8']];
-Config::$values['integration_behaviors_enabled'] = '1';
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '1';
 PluginBehaviorsConfig::$mode = 0;
 expect((new PolicyResolver())->resolve([])['policy'] === 'ALLOW_MULTIPLE', 'Behaviors mode 0');
 PluginBehaviorsConfig::$mode = 1;
@@ -172,13 +184,13 @@ PluginBehaviorsConfig::$mode = 2;
 expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Behaviors mode 2');
 Plugin::$info['behaviors']['version'] = '2.7.7';
 expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_VERSION_UNSUPPORTED', 'Behaviors version gate');
-Config::$values['integration_behaviors_enabled'] = '0';
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '0';
 expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_DISABLED', 'Behaviors authorization gate');
 
 Plugin::$active = ['escalade' => true];
 Plugin::$info = ['escalade' => ['version' => '2.9.22']];
-Config::$values['integration_behaviors_enabled'] = '0';
-Config::$values['integration_escalade_enabled'] = '1';
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '0';
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '1';
 $_SESSION['glpi_plugins']['escalade']['config'] = [
     'remove_group' => 1,
     'remove_tech' => 0,
@@ -198,7 +210,7 @@ expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Esca
 Plugin::$active = ['behaviors' => true, 'escalade' => true];
 Plugin::$info = ['behaviors' => ['version' => '2.7.8'], 'escalade' => ['version' => '2.9.22']];
 PluginBehaviorsConfig::$mode = 1;
-Config::$values['integration_behaviors_enabled'] = '1';
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '1';
 $_SESSION['glpi_plugins']['escalade']['config']['remove_tech'] = 0;
 $_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 0;
 expect((new PolicyResolver())->resolve([])['policy'] === 'CONFLICT', 'Combined providers conflict');
