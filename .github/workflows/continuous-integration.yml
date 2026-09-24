@@ -61,7 +61,7 @@ jobs:
         working-directory: glpi
         run: |
           test -f plugins/assignmentguard/setup.php
-          docker compose exec -T app bin/console plugin:list | grep -q assignmentguard
+          docker compose exec -T app bin/console list --raw | grep -qx 'plugin:install'
           docker compose exec -T app bin/console plugin:install assignmentguard -u glpi
           docker compose exec -T app bin/console plugin:enable assignmentguard
           docker compose exec -T app bin/console plugin:disable assignmentguard
