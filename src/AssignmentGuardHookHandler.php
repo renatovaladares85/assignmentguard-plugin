@@ -43,11 +43,14 @@ final class AssignmentGuardHookHandler
                 throw new \RuntimeException('Normalization did not alter input.');
             }
             $item->input = $normalized;
-            self::log($base + [
+            if (!self::log($base + [
                 'acted' => true,
                 'decision' => 'ACTED_GROUP_REPLACEMENT',
                 'normalized_groups' => $delta['added_groups'],
-            ]);
+            ])) {
+                $item->input = $original;
+                self::log($base + ['decision' => 'ERROR_INTERNAL']);
+            }
         } catch (\Throwable $exception) {
             $item->input = $original;
             self::log($base + ['decision' => 'ERROR_INTERNAL']);
@@ -86,8 +89,8 @@ final class AssignmentGuardHookHandler
         return $fields;
     }
 
-    private static function log(array $decision): void
+    private static function log(array $decision): bool
     {
-        DecisionLogger::log($decision);
+        return DecisionLogger::log($decision);
     }
 }

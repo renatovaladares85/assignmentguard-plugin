@@ -249,6 +249,24 @@ $before = $ticket->input;
 AssignmentGuardHookHandler::handle($ticket);
 expect($ticket->input === $before, 'Logger failure must not block native flow');
 
+$writeAttempts = [];
+$failFirstWrite = true;
+Plugin::$active = [];
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '0';
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '0';
+DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$writeAttempts, &$failFirstWrite) {
+    $writeAttempts[] = $decision['decision'];
+    if ($failFirstWrite) {
+        $failFirstWrite = false;
+        throw new RuntimeException('simulated acted logging failure');
+    }
+});
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Acted logging failure must restore the original input');
+expect($writeAttempts === ['ACTED_GROUP_REPLACEMENT', 'ERROR_INTERNAL'], 'Acted logging failure must attempt ERROR_INTERNAL');
+
 DecisionLogger::setWriterForTests(null);
 Toolbox::$lines = [];
 $ticket = makeTicket($groupsA, []);

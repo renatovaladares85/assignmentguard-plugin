@@ -12,7 +12,7 @@ final class DecisionLogger
         self::$writer = $writer;
     }
 
-    public static function log(array $decision): void
+    public static function log(array $decision): bool
     {
         try {
             $decision['timestamp'] = gmdate('c');
@@ -26,11 +26,13 @@ final class DecisionLogger
             }
             if (self::$writer !== null) {
                 call_user_func(self::$writer, $line, $decision);
-                return;
+                return true;
             }
             \Toolbox::logInFile('assignmentguard', $line, true);
+            return true;
         } catch (\Throwable $exception) {
             // Logging must not block the native Ticket update flow.
+            return false;
         }
     }
 }
