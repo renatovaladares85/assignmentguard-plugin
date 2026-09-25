@@ -91,9 +91,10 @@ function makeTicket($groups, $input)
 
 function parseWithoutMutation($parser, $groups, $input, $message)
 {
-    $before = $input;
-    $delta = $parser->parse(makeTicket($groups, $input), $input);
-    expect($input === $before, $message . ' must not mutate input');
+    $ticket = makeTicket($groups, $input);
+    $snapshot = $ticket->input;
+    $delta = $parser->parse($ticket, $ticket->input);
+    expect($ticket->input === $snapshot, $message . ' must not mutate ticket input');
     return $delta;
 }
 
