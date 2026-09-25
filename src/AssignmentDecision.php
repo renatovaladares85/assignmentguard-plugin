@@ -8,7 +8,7 @@ final class AssignmentDecision
     public const POLICY_ALLOW_MULTIPLE = 'ALLOW_MULTIPLE';
     public const POLICY_UNKNOWN = 'UNKNOWN';
     public const POLICY_COUPLED_ACTORS = 'COUPLED_ACTORS';
-    public const POLICY_CONFLICT = 'CONFLICT';
+    public const RESOLUTION_CONFLICT = 'CONFLICT';
 
     public const ACTED_GROUP_REPLACEMENT = 'ACTED_GROUP_REPLACEMENT';
     public const NOT_ACTED_NO_GROUP_CHANGE = 'NOT_ACTED_NO_GROUP_CHANGE';
@@ -59,23 +59,30 @@ final class AssignmentDecision
 
     public static function standalone(?array $delta, bool $enabled): array
     {
-        if (!$enabled) {
-            return [
-                'policy' => self::POLICY_ALLOW_MULTIPLE,
-                'source' => 'standalone',
-                'reason' => self::NOT_ACTED_POLICY_ALLOWS_MULTIPLE,
-            ];
-        }
-
         $reason = self::validateDelta($delta);
         if ($reason !== null) {
             return [
                 'policy' => self::POLICY_UNKNOWN,
                 'source' => 'standalone',
+                'acted' => false,
                 'reason' => $reason,
             ];
         }
 
-        return ['policy' => self::POLICY_REPLACE, 'source' => 'standalone'];
+        if (!$enabled) {
+            return [
+                'policy' => self::POLICY_ALLOW_MULTIPLE,
+                'source' => 'standalone',
+                'acted' => false,
+                'reason' => self::NOT_ACTED_POLICY_ALLOWS_MULTIPLE,
+            ];
+        }
+
+        return [
+            'policy' => self::POLICY_REPLACE,
+            'source' => 'standalone',
+            'acted' => true,
+            'reason' => self::ACTED_GROUP_REPLACEMENT,
+        ];
     }
 }

@@ -151,43 +151,54 @@ $groupsA = [['id' => 100, 'groups_id' => 10]];
 $parser = new ActorInputParser();
 $delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]], 'A1');
 expect($delta['recognized'] && $delta['format'] === 'actors' && $delta['added_groups'] === [20], 'A1 parser delta');
-$policy = (new PolicyResolver())->resolve([], $delta);
-expect($policy['policy'] === AssignmentDecision::POLICY_REPLACE && $policy['source'] === 'standalone', 'A1 standalone policy');
+$simpleDelta = $delta;
+$standaloneSimple = (new PolicyResolver())->resolve([], $delta);
+expect($standaloneSimple['policy'] === AssignmentDecision::POLICY_REPLACE && $standaloneSimple['source'] === 'standalone', 'A1 standalone policy');
+expect($standaloneSimple['acted'] === true && $standaloneSimple['reason'] === AssignmentDecision::ACTED_GROUP_REPLACEMENT, 'A1 standalone decision');
 expect(Plugin::$getInfoCalls === 0 && PluginBehaviorsConfig::$getInstanceCalls === 0, 'Standalone must not execute external providers');
 
 $delta = parseWithoutMutation($parser, [], ['_actors' => ['assign' => [$actorB]]], 'A2');
 expect($delta['recognized'] && $delta['existing_groups'] === [] && $delta['added_groups'] === [20], 'A2 parser delta');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_NO_EXISTING_GROUP, 'A2 standalone reason');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_NO_EXISTING_GROUP, 'A2 standalone decision');
 
 $delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA]]], 'A3');
 expect($delta['recognized'] && !$delta['changed'] && $delta['reason'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A3 parser delta');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_NO_GROUP_CHANGE, 'A3 standalone reason');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_NO_GROUP_CHANGE, 'A3 standalone decision');
 
 $delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA, $actorB, ['itemtype' => 'Group', 'items_id' => 30]]]], 'A4');
 expect($delta['recognized'] && $delta['added_groups'] === [20, 30], 'A4 parser delta');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_MULTIPLE_NEW_GROUPS, 'A4 standalone reason');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_MULTIPLE_NEW_GROUPS, 'A4 standalone decision');
 
 $groupsAB = [['id' => 100, 'groups_id' => 10], ['id' => 101, 'groups_id' => 11]];
 $delta = parseWithoutMutation($parser, $groupsAB, ['_actors' => ['assign' => [$actorA, ['itemtype' => 'Group', 'items_id' => 11], $actorB]]], 'A5');
 expect($delta['recognized'] && $delta['existing_groups'] === [10, 11] && $delta['added_groups'] === [20], 'A5 parser delta');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_MULTIPLE_EXISTING_GROUPS, 'A5 standalone reason');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_MULTIPLE_EXISTING_GROUPS, 'A5 standalone decision');
 
 $delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorB]]], 'A6');
 expect($delta['recognized'] && $delta['added_groups'] === [20] && $delta['removed_groups'] === [10], 'A6 parser delta');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_ALREADY_REPLACED, 'A6 standalone reason');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_ALREADY_REPLACED, 'A6 standalone decision');
 
 $delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [['itemtype' => 'Group']]]], 'A7');
 expect(!$delta['recognized'] && $delta['reason'] === 'NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT', 'A7 parser delta');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT, 'A7 standalone reason');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT, 'A7 standalone decision');
 
 $delta = parseWithoutMutation($parser, $groupsA, [], 'A8');
 expect($delta['recognized'] && !$delta['changed'] && $delta['reason'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A8 parser delta');
+$policy = (new PolicyResolver())->resolve([], $delta);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_NO_GROUP_CHANGE, 'A8 standalone decision');
 
 Config::$values[PluginConfig::CONTEXT]['standalone_group_replacement'] = '0';
-expect((new PolicyResolver())->resolve([], $delta)['policy'] === AssignmentDecision::POLICY_ALLOW_MULTIPLE, 'Standalone disabled policy');
-expect((new PolicyResolver())->resolve([], $delta)['reason'] === AssignmentDecision::NOT_ACTED_POLICY_ALLOWS_MULTIPLE, 'Standalone disabled reason');
+$policy = (new PolicyResolver())->resolve([], $simpleDelta);
+expect($policy['policy'] === AssignmentDecision::POLICY_ALLOW_MULTIPLE && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_POLICY_ALLOWS_MULTIPLE, 'Standalone disabled decision');
 Config::$values[PluginConfig::CONTEXT]['standalone_group_replacement'] = '1';
-expect((new PolicyResolver())->resolve([])['reason'] === AssignmentDecision::NOT_ACTED_UNSUPPORTED_CONTEXT, 'Standalone requires a validated delta');
+$policy = (new PolicyResolver())->resolve([]);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_UNSUPPORTED_CONTEXT, 'Standalone unsupported decision');
 
 $delta = parseWithoutMutation($parser, $groupsA, ['_groups_id_assign' => [10, 20]], 'Legacy parser');
 expect($delta['recognized'] && $delta['format'] === 'legacy' && $delta['added_groups'] === [20], 'Legacy parser delta');
@@ -285,7 +296,8 @@ PluginBehaviorsConfig::$mode = 1;
 Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '1';
 $_SESSION['glpi_plugins']['escalade']['config']['remove_tech'] = 0;
 $_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 0;
-expect((new PolicyResolver())->resolve([])['policy'] === 'CONFLICT', 'Combined providers conflict');
+$policy = (new PolicyResolver())->resolve([]);
+expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['resolution'] === AssignmentDecision::RESOLUTION_CONFLICT && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_POLICY_CONFLICT, 'Combined providers conflict');
 
 class ThrowingTicket extends Ticket
 {

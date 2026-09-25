@@ -48,8 +48,10 @@ final class PolicyResolver
         foreach ($providers as $provider) {
             if ($provider['policy'] !== $policy) {
                 return [
-                    'policy' => AssignmentDecision::POLICY_CONFLICT,
+                    'policy' => AssignmentDecision::POLICY_UNKNOWN,
                     'source' => 'combined',
+                    'resolution' => AssignmentDecision::RESOLUTION_CONFLICT,
+                    'acted' => false,
                     'reason' => AssignmentDecision::NOT_ACTED_POLICY_CONFLICT,
                 ];
             }
