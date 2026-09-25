@@ -27,15 +27,15 @@ final class AssignmentGuardHookHandler
                 self::log($base + ['decision' => $delta['reason']]);
                 return;
             }
-            $decision = self::validateDelta($delta);
+            $decision = AssignmentDecision::validateDelta($delta);
             if ($decision !== null) {
                 self::log($base + ['decision' => $decision]);
                 return;
             }
-            $policy = (new PolicyResolver())->resolve($original);
+            $policy = (new PolicyResolver())->resolve($original, $delta);
             $base['policy_source'] = $policy['source'];
-            if ($policy['policy'] !== 'REPLACE') {
-                self::log($base + ['decision' => $policy['reason'] ?? 'NOT_ACTED_POLICY_ALLOWS_MULTIPLE']);
+            if ($policy['policy'] !== AssignmentDecision::POLICY_REPLACE) {
+                self::log($base + ['decision' => $policy['reason'] ?? AssignmentDecision::NOT_ACTED_POLICY_ALLOWS_MULTIPLE]);
                 return;
             }
             $normalized = (new GroupInputNormalizer())->normalize($original, $delta);
@@ -45,37 +45,16 @@ final class AssignmentGuardHookHandler
             $item->input = $normalized;
             if (!self::log($base + [
                 'acted' => true,
-                'decision' => 'ACTED_GROUP_REPLACEMENT',
+                'decision' => AssignmentDecision::ACTED_GROUP_REPLACEMENT,
                 'normalized_groups' => $delta['added_groups'],
             ])) {
                 $item->input = $original;
-                self::log($base + ['decision' => 'ERROR_INTERNAL']);
+                self::log($base + ['decision' => AssignmentDecision::ERROR_INTERNAL]);
             }
         } catch (\Throwable $exception) {
             $item->input = $original;
-            self::log($base + ['decision' => 'ERROR_INTERNAL']);
+            self::log($base + ['decision' => AssignmentDecision::ERROR_INTERNAL]);
         }
-    }
-
-    private static function validateDelta(array $delta): ?string
-    {
-        if (count($delta['existing_groups']) === 0) {
-            return 'NOT_ACTED_NO_EXISTING_GROUP';
-        }
-        if (count($delta['existing_groups']) !== 1) {
-            return 'NOT_ACTED_MULTIPLE_EXISTING_GROUPS';
-        }
-        if (count($delta['added_groups']) === 0) {
-            return count($delta['removed_groups']) > 0
-                ? 'NOT_ACTED_ALREADY_REPLACED' : 'NOT_ACTED_NO_NEW_GROUP';
-        }
-        if (count($delta['added_groups']) !== 1) {
-            return 'NOT_ACTED_MULTIPLE_NEW_GROUPS';
-        }
-        if (count($delta['removed_groups']) > 0) {
-            return 'NOT_ACTED_ALREADY_REPLACED';
-        }
-        return null;
     }
 
     private static function groupFields(array $delta): array
