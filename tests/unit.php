@@ -68,6 +68,7 @@ require_once dirname(__DIR__) . '/setup.php';
 require_once dirname(__DIR__) . '/hook.php';
 
 use GlpiPlugin\Assignmentguard\AssignmentGuardHookHandler;
+use GlpiPlugin\Assignmentguard\ActorInputParser;
 use GlpiPlugin\Assignmentguard\DecisionLogger;
 use GlpiPlugin\Assignmentguard\PluginConfig;
 use GlpiPlugin\Assignmentguard\PolicyResolver;
@@ -86,6 +87,15 @@ function makeTicket($groups, $input)
     $ticket->groups = $groups;
     $ticket->input = $input;
     return $ticket;
+}
+
+function parseWithoutMutation($parser, $groups, $input, $message)
+{
+    $ticket = makeTicket($groups, $input);
+    $snapshot = $ticket->input;
+    $delta = $parser->parse($ticket, $ticket->input);
+    expect($ticket->input === $snapshot, $message . ' must not mutate ticket input');
+    return $delta;
 }
 
 $PLUGIN_HOOKS = [];
@@ -134,6 +144,38 @@ DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$even
 $actorA = ['itemtype' => 'Group', 'items_id' => 10];
 $actorB = ['itemtype' => 'Group', 'items_id' => 20];
 $groupsA = [['id' => 100, 'groups_id' => 10]];
+
+$parser = new ActorInputParser();
+$delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]], 'A1');
+expect($delta['recognized'] && $delta['format'] === 'actors' && $delta['added_groups'] === [20], 'A1 parser delta');
+
+$delta = parseWithoutMutation($parser, [], ['_actors' => ['assign' => [$actorB]]], 'A2');
+expect($delta['recognized'] && $delta['existing_groups'] === [] && $delta['added_groups'] === [20], 'A2 parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA]]], 'A3');
+expect($delta['recognized'] && !$delta['changed'] && $delta['reason'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A3 parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA, $actorB, ['itemtype' => 'Group', 'items_id' => 30]]]], 'A4');
+expect($delta['recognized'] && $delta['added_groups'] === [20, 30], 'A4 parser delta');
+
+$groupsAB = [['id' => 100, 'groups_id' => 10], ['id' => 101, 'groups_id' => 11]];
+$delta = parseWithoutMutation($parser, $groupsAB, ['_actors' => ['assign' => [$actorA, ['itemtype' => 'Group', 'items_id' => 11], $actorB]]], 'A5');
+expect($delta['recognized'] && $delta['existing_groups'] === [10, 11] && $delta['added_groups'] === [20], 'A5 parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorB]]], 'A6');
+expect($delta['recognized'] && $delta['added_groups'] === [20] && $delta['removed_groups'] === [10], 'A6 parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [['itemtype' => 'Group']]]], 'A7');
+expect(!$delta['recognized'] && $delta['reason'] === 'NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT', 'A7 parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, [], 'A8');
+expect($delta['recognized'] && !$delta['changed'] && $delta['reason'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A8 parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, ['_groups_id_assign' => [10, 20]], 'Legacy parser');
+expect($delta['recognized'] && $delta['format'] === 'legacy' && $delta['added_groups'] === [20], 'Legacy parser delta');
+
+$delta = parseWithoutMutation($parser, $groupsA, ['_groups_id_assign' => '20.5'], 'Unknown legacy parser');
+expect(!$delta['recognized'] && $delta['reason'] === 'NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT', 'Unknown legacy parser delta');
 
 $ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]]);
 AssignmentGuardHookHandler::handle($ticket);
