@@ -10,6 +10,7 @@ class Ticket
     public $input = [];
     public $fields = [];
     public $groups = [];
+    public $users = [];
     public $new = false;
 
     public function isNewItem()
@@ -24,6 +25,11 @@ class Ticket
     public function getGroups($type)
     {
         return $this->groups;
+    }
+
+    public function getUsers($type)
+    {
+        return $this->users;
     }
 }
 
@@ -73,6 +79,7 @@ use GlpiPlugin\Assignmentguard\AssignmentGuardHookHandler;
 use GlpiPlugin\Assignmentguard\ActorInputParser;
 use GlpiPlugin\Assignmentguard\AssignmentDecision;
 use GlpiPlugin\Assignmentguard\DecisionLogger;
+use GlpiPlugin\Assignmentguard\GroupInputNormalizer;
 use GlpiPlugin\Assignmentguard\PluginConfig;
 use GlpiPlugin\Assignmentguard\PolicyResolver;
 
@@ -83,11 +90,12 @@ function expect($condition, $message)
     }
 }
 
-function makeTicket($groups, $input)
+function makeTicket($groups, $input, $users = [])
 {
     $ticket = new Ticket();
     $ticket->fields = ['id' => 42];
     $ticket->groups = $groups;
+    $ticket->users = $users;
     $ticket->input = $input;
     return $ticket;
 }
@@ -146,7 +154,9 @@ DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$even
 
 $actorA = ['itemtype' => 'Group', 'items_id' => 10];
 $actorB = ['itemtype' => 'Group', 'items_id' => 20];
+$actorTechnician = ['itemtype' => 'User', 'items_id' => 7];
 $groupsA = [['id' => 100, 'groups_id' => 10]];
+$usersTechnician = [['id' => 200, 'users_id' => 7]];
 
 $parser = new ActorInputParser();
 $delta = parseWithoutMutation($parser, $groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]], 'A1');
@@ -156,6 +166,17 @@ $standaloneSimple = (new PolicyResolver())->resolve([], $delta);
 expect($standaloneSimple['policy'] === AssignmentDecision::POLICY_REPLACE && $standaloneSimple['source'] === 'standalone', 'A1 standalone policy');
 expect($standaloneSimple['acted'] === true && $standaloneSimple['reason'] === AssignmentDecision::ACTED_GROUP_REPLACEMENT, 'A1 standalone decision');
 expect(Plugin::$getInfoCalls === 0 && PluginBehaviorsConfig::$getInstanceCalls === 0, 'Standalone must not execute external providers');
+
+$normalizerInput = [
+    'name' => 'preserve',
+    'itilcategories_id' => 12,
+    '_actors' => ['assign' => [$actorA, $actorTechnician, $actorB]],
+];
+$normalizerBefore = $normalizerInput;
+$normalized = (new GroupInputNormalizer())->normalize($normalizerInput, $simpleDelta);
+expect($normalizerInput === $normalizerBefore, 'A1 normalizer must build a separate input');
+expect($normalized['name'] === 'preserve' && $normalized['itilcategories_id'] === 12, 'A1 normalizer preserves unrelated fields');
+expect($normalized['_actors']['assign'] === [$actorTechnician, $actorB], 'A1 normalizer removes only persisted group A');
 
 $delta = parseWithoutMutation($parser, [], ['_actors' => ['assign' => [$actorB]]], 'A2');
 expect($delta['recognized'] && $delta['existing_groups'] === [] && $delta['added_groups'] === [20], 'A2 parser delta');
@@ -206,26 +227,56 @@ expect($delta['recognized'] && $delta['format'] === 'legacy' && $delta['added_gr
 $delta = parseWithoutMutation($parser, $groupsA, ['_groups_id_assign' => '20.5'], 'Unknown legacy parser');
 expect(!$delta['recognized'] && $delta['reason'] === 'NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT', 'Unknown legacy parser delta');
 
-$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]]);
+$ticket = makeTicket($groupsA, [
+    'name' => 'preserve',
+    'itilcategories_id' => 12,
+    '_actors' => ['assign' => [$actorA, $actorTechnician, $actorB]],
+], $usersTechnician);
 AssignmentGuardHookHandler::handle($ticket);
-expect(count($ticket->input['_actors']['assign']) === 1, 'A1 should normalize actor list');
-expect((int) $ticket->input['_actors']['assign'][0]['items_id'] === 20, 'A1 should retain B');
+expect($ticket->input['name'] === 'preserve' && $ticket->input['itilcategories_id'] === 12, 'A1 must preserve unrelated input');
+expect($ticket->input['_actors']['assign'] === [$actorTechnician, $actorB], 'A1 should retain B and preserve technician');
 expect(end($events)['decision'] === 'ACTED_GROUP_REPLACEMENT', 'A1 decision');
 
-$ticket = makeTicket([], ['_actors' => ['assign' => [$actorB]]]);
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorTechnician, $actorB]]]);
+$before = $ticket->input;
 AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Technician addition must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Technician addition decision');
+
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]], $usersTechnician);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Technician removal must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Technician removal decision');
+
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, ['itemtype' => 'User', 'items_id' => 8], $actorB]]], $usersTechnician);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Technician replacement must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Technician replacement decision');
+
+$ticket = makeTicket([], ['_actors' => ['assign' => [$actorB]]]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'A2 must preserve input');
 expect(end($events)['decision'] === 'NOT_ACTED_NO_EXISTING_GROUP', 'A2 decision');
 
 $ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA]]]);
+$before = $ticket->input;
 AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'A3 must preserve input');
 expect(end($events)['decision'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A3 decision');
 
 $ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB, ['itemtype' => 'Group', 'items_id' => 30]]]]);
+$before = $ticket->input;
 AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'A4 must preserve input');
 expect(end($events)['decision'] === 'NOT_ACTED_MULTIPLE_NEW_GROUPS', 'A4 decision');
 
 $ticket = makeTicket([['id' => 100, 'groups_id' => 10], ['id' => 101, 'groups_id' => 11]], ['_actors' => ['assign' => [$actorA, ['itemtype' => 'Group', 'items_id' => 11], $actorB]]]);
+$before = $ticket->input;
 AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'A5 must preserve input');
 expect(end($events)['decision'] === 'NOT_ACTED_MULTIPLE_EXISTING_GROUPS', 'A5 decision');
 
 $ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorB]]]);
@@ -235,12 +286,16 @@ expect($ticket->input === $before, 'A6 must preserve already-replaced input');
 expect(end($events)['decision'] === 'NOT_ACTED_ALREADY_REPLACED', 'A6 decision');
 
 $ticket = makeTicket($groupsA, ['_actors' => ['assign' => [['itemtype' => 'Group']]]]);
+$before = $ticket->input;
 AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'A7 must preserve input');
 expect(end($events)['decision'] === 'NOT_ACTED_UNRECOGNIZED_ACTOR_INPUT', 'A7 decision');
 
 $ticket = makeTicket($groupsA, []);
+$before = $ticket->input;
 $eventsBefore = count($events);
 AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'A8 must preserve input');
 expect(count($events) === $eventsBefore + 1, 'A8 must write exactly one decision');
 expect(end($events)['decision'] === 'NOT_ACTED_NO_GROUP_CHANGE', 'A8 decision');
 $record = json_decode(end($lines), true);
@@ -255,6 +310,15 @@ AssignmentGuardHookHandler::handle($ticket);
 expect($ticket->input['_groups_id_assign'] === [20], 'Legacy format should retain B');
 expect(count($ticket->input['_groups_id_assign_deleted']) === 1, 'Legacy format should explicitly delete A');
 expect(end($events)['decision'] === 'ACTED_GROUP_REPLACEMENT', 'Legacy decision');
+
+$ticket = makeTicket($groupsA, [
+    '_groups_id_assign' => [10, 20],
+    '_users_id_assign_deleted' => [['id' => 200, 'users_id' => 7]],
+]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Legacy technician removal must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Legacy technician removal decision');
 
 Plugin::$active = ['behaviors' => true];
 Plugin::$info = ['behaviors' => ['version' => '2.7.8']];
@@ -303,6 +367,20 @@ class ThrowingTicket extends Ticket
 {
     public function getGroups($type) { throw new RuntimeException('simulated parser failure'); }
 }
+
+class UnreadableUsersTicket extends Ticket
+{
+    public function getUsers($type) { throw new RuntimeException('simulated users failure'); }
+}
+$ticket = new UnreadableUsersTicket();
+$ticket->fields = ['id' => 98];
+$ticket->groups = $groupsA;
+$ticket->input = ['_actors' => ['assign' => [$actorA, $actorB]]];
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Unreadable technicians must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_UNSUPPORTED_CONTEXT', 'Unreadable technicians decision');
+
 $ticket = new ThrowingTicket();
 $ticket->fields = ['id' => 99];
 $ticket->input = ['_actors' => ['assign' => [$actorA, $actorB]]];

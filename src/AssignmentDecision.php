@@ -32,6 +32,9 @@ final class AssignmentDecision
         if ($delta === null || empty($delta['recognized'])) {
             return $delta['reason'] ?? self::NOT_ACTED_UNSUPPORTED_CONTEXT;
         }
+        if (!empty($delta['assign_users_changed'])) {
+            return self::NOT_ACTED_COUPLED_ACTORS;
+        }
         if (empty($delta['changed'])) {
             return $delta['reason'] ?? self::NOT_ACTED_NO_GROUP_CHANGE;
         }
