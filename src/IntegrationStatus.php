@@ -28,16 +28,16 @@ final class IntegrationStatus
         ];
 
         if (!$installed) {
-            return $status + ['state' => 'not_installed'];
+            return self::withState($status, 'not_installed');
         }
         if (!$active) {
-            return $status + ['state' => 'inactive'];
+            return self::withState($status, 'inactive');
         }
         if (!$supported) {
-            return $status + ['state' => 'unsupported'];
+            return self::withState($status, 'unsupported');
         }
         if (!$authorized) {
-            return $status + ['state' => 'not_authorized'];
+            return self::withState($status, 'not_authorized');
         }
 
         try {
@@ -48,11 +48,31 @@ final class IntegrationStatus
         }
 
         $status['policy'] = $policy;
-        $status['state'] = in_array($policy, [
+        $state = in_array($policy, [
             AssignmentDecision::POLICY_UNKNOWN,
             AssignmentDecision::POLICY_COUPLED_ACTORS,
         ], true) ? 'blocked' : 'ready';
+        return self::withState($status, $state);
+    }
+
+    private static function withState(array $status, string $state): array
+    {
+        $status['state'] = $state;
+        $status['severity'] = self::severityForState($state);
         return $status;
+    }
+
+    private static function severityForState(string $state): string
+    {
+        if (in_array($state, ['not_installed', 'inactive'], true)) {
+            return 'warning';
+        }
+
+        if ($state === 'ready') {
+            return 'ok';
+        }
+
+        return 'blocked';
     }
 
     private static function isSupported(string $name, ?string $version): bool

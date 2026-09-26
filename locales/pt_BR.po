@@ -66,6 +66,15 @@ msgstr "Política efetiva"
 msgid "Final state"
 msgstr "Estado final"
 
+msgid "Condition"
+msgstr "Condição"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Warning"
+msgstr "Aviso"
+
 msgid "Replace group"
 msgstr "Substituir grupo"
 

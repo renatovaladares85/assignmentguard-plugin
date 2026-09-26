@@ -39,6 +39,11 @@ $stateLabels = [
     'blocked' => __('Blocked', 'assignmentguard'),
     'ready' => __('Ready', 'assignmentguard'),
 ];
+$severityLabels = [
+    'ok' => __('OK', 'assignmentguard'),
+    'warning' => __('Warning', 'assignmentguard'),
+    'blocked' => __('Blocked', 'assignmentguard'),
+];
 
 Html::header(__('Assignment Guard', 'assignmentguard'), '', 'config', 'plugins');
 echo "<form method='post' action='config.form.php'>";
@@ -85,7 +90,8 @@ foreach ($plugins as $key => $definition) {
         __('Supported', 'assignmentguard') => $yesNo($status['supported']),
         __('Authorized', 'assignmentguard') => $yesNo($status['authorized']),
         __('Effective policy', 'assignmentguard') => $policyLabels[$status['policy']] ?? Html::clean($status['policy']),
-        __('Final state', 'assignmentguard') => $stateLabels[$status['state']],
+        __('Condition', 'assignmentguard') => $stateLabels[$status['state']],
+        __('Final state', 'assignmentguard') => $severityLabels[$status['severity']],
     ];
     foreach ($fields as $label => $value) {
         echo '<tr class="tab_bg_1"><td>' . $label . '</td><td>' . $value . '</td></tr>';
