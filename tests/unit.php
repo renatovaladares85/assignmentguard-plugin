@@ -422,6 +422,7 @@ $safeEscaladeConfig = [
     'use_assign_user_group' => 0,
     'use_assign_user_group_modification' => 0,
     'reassign_group_from_cat' => 0,
+    'reassign_tech_from_cat' => 0,
 ];
 $_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
 foreach (['2.9.18', '2.9.19', '2.9.20', '2.9.21', '2.9.22'] as $version) {
@@ -468,6 +469,17 @@ expect((new PolicyResolver())->resolve(['_actors' => ['assign' => [$actorTechnic
 $_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
 $_SESSION['glpi_plugins']['escalade']['config']['reassign_group_from_cat'] = 1;
 expect((new PolicyResolver())->resolve(['itilcategories_id' => 12])['policy'] === 'COUPLED_ACTORS', 'Escalade category reassignment gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['reassign_tech_from_cat'] = 1;
+expect((new PolicyResolver())->resolve(['itilcategories_id' => 12])['policy'] === 'COUPLED_ACTORS', 'Escalade category technician gate');
+$ticket = makeTicket($groupsA, [
+    'itilcategories_id' => 12,
+    '_actors' => ['assign' => [$actorA, $actorB]],
+]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Escalade category technician gate must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Escalade category technician decision');
 $_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
 unset($_SESSION['glpi_plugins']['escalade']['config']['remove_tech']);
 expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Escalade incomplete coupling configuration gate');

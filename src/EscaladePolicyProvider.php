@@ -37,6 +37,7 @@ final class EscaladePolicyProvider
             'remove_requester',
             'use_assign_user_group_modification',
             'reassign_group_from_cat',
+            'reassign_tech_from_cat',
         ] as $key) {
             if (!array_key_exists($key, $config) || !in_array((string) $config[$key], ['0', '1'], true)) {
                 return false;
@@ -70,7 +71,8 @@ final class EscaladePolicyProvider
             && $this->changesAssignUsers($input, $delta)) {
             return true;
         }
-        if (!empty($config['reassign_group_from_cat']) && array_key_exists('itilcategories_id', $input)) {
+        if ((!empty($config['reassign_group_from_cat']) || !empty($config['reassign_tech_from_cat']))
+            && array_key_exists('itilcategories_id', $input)) {
             return true;
         }
         return false;
