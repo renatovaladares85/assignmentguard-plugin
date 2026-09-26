@@ -525,6 +525,38 @@ $_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 0;
 $policy = (new PolicyResolver())->resolve([]);
 expect($policy['policy'] === AssignmentDecision::POLICY_UNKNOWN && $policy['resolution'] === AssignmentDecision::RESOLUTION_CONFLICT && $policy['acted'] === false && $policy['reason'] === AssignmentDecision::NOT_ACTED_POLICY_CONFLICT, 'Combined providers conflict');
 
+$resolverInput = ['name' => 'preserve', '_actors' => ['assign' => [$actorA, $actorB]]];
+$resolverInputBefore = $resolverInput;
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+PluginBehaviorsConfig::$mode = 1;
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'REPLACE' && $policy['source'] === 'combined', 'Combined providers replace agreement');
+expect($resolverInput === $resolverInputBefore, 'Combined resolver must not mutate input');
+$_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 0;
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'UNKNOWN' && $policy['reason'] === 'NOT_ACTED_POLICY_CONFLICT', 'Combined replace and allow conflict');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+PluginBehaviorsConfig::$mode = 'invalid';
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'UNKNOWN' && $policy['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Combined unknown policy gate');
+PluginBehaviorsConfig::$mode = 1;
+$_SESSION['glpi_plugins']['escalade']['config']['remove_tech'] = 1;
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'COUPLED_ACTORS' && $policy['reason'] === 'NOT_ACTED_COUPLED_ACTORS', 'Combined coupled policy gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '0';
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'UNKNOWN' && $policy['reason'] === 'NOT_ACTED_INTEGRATION_DISABLED', 'Combined disabled integration gate');
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '1';
+Plugin::$info['escalade']['version'] = '2.10.0';
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'UNKNOWN' && $policy['reason'] === 'NOT_ACTED_INTEGRATION_VERSION_UNSUPPORTED', 'Combined unsupported integration gate');
+Plugin::$active = [];
+Plugin::$info = [];
+$policy = (new PolicyResolver())->resolve($resolverInput, $simpleDelta);
+expect($policy['policy'] === 'REPLACE' && $policy['source'] === 'standalone', 'No active integration uses standalone policy');
+expect($resolverInput === $resolverInputBefore, 'Standalone resolver must not mutate input');
+
 class ThrowingTicket extends Ticket
 {
     public function getGroups($type) { throw new RuntimeException('simulated parser failure'); }
