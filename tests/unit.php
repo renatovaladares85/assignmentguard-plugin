@@ -311,6 +311,15 @@ expect($ticket->input['_groups_id_assign'] === [20], 'Legacy format should retai
 expect(count($ticket->input['_groups_id_assign_deleted']) === 1, 'Legacy format should explicitly delete A');
 expect(end($events)['decision'] === 'ACTED_GROUP_REPLACEMENT', 'Legacy decision');
 
+$ticket = makeTicket($groupsA, [
+    '_groups_id_assign' => [10, 20],
+    '_users_id_assign_deleted' => [['id' => 200, 'users_id' => 7]],
+]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Legacy technician removal must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Legacy technician removal decision');
+
 Plugin::$active = ['behaviors' => true];
 Plugin::$info = ['behaviors' => ['version' => '2.7.8']];
 Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '1';

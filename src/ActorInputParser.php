@@ -19,7 +19,7 @@ final class ActorInputParser
             return $this->parseActors($input, $existing, $existingUsers);
         }
         if (array_key_exists('_groups_id_assign', $input)) {
-            if (array_key_exists('_users_id_assign', $input) || array_key_exists('_additional_users_assign', $input)) {
+            if (array_key_exists('_users_id_assign', $input) || array_key_exists('_users_id_assign_deleted', $input)) {
                 return ['recognized' => false, 'reason' => 'NOT_ACTED_COUPLED_ACTORS'];
             }
             return $this->parseLegacyGroups($input, $existing);
