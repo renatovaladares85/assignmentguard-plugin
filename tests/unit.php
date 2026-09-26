@@ -406,11 +406,15 @@ AssignmentGuardHookHandler::handle($ticket);
 expect($ticket->input === $before, 'Behaviors mode 2 must not normalize coupled actors');
 expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Behaviors mode 2 decision');
 
+Plugin::$active = ['glpi_escalation' => true];
+Plugin::$info = ['glpi_escalation' => ['version' => '9.5.0']];
+expect((new PolicyResolver())->resolve([], $simpleDelta)['source'] === 'standalone', 'Legacy Escalade must not be an integration source');
+
 Plugin::$active = ['escalade' => true];
 Plugin::$info = ['escalade' => ['version' => '2.9.22']];
 Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '0';
 Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '1';
-$_SESSION['glpi_plugins']['escalade']['config'] = [
+$safeEscaladeConfig = [
     'remove_group' => 1,
     'remove_tech' => 0,
     'remove_requester' => 0,
@@ -419,10 +423,33 @@ $_SESSION['glpi_plugins']['escalade']['config'] = [
     'use_assign_user_group_modification' => 0,
     'reassign_group_from_cat' => 0,
 ];
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+foreach (['2.9.18', '2.9.19', '2.9.20', '2.9.21', '2.9.22'] as $version) {
+    Plugin::$info['escalade']['version'] = $version;
+    expect((new PolicyResolver())->resolve([])['policy'] === 'REPLACE', 'Escalade supported version ' . $version);
+}
 expect((new PolicyResolver())->resolve([])['policy'] === 'REPLACE', 'Escalade safe replace');
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]]);
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input['_actors']['assign'] === [$actorB], 'Escalade remove_group 1 normalizes the simple group replacement');
+expect(end($events)['decision'] === 'ACTED_GROUP_REPLACEMENT', 'Escalade remove_group 1 decision');
 $_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 0;
 expect((new PolicyResolver())->resolve([])['policy'] === 'ALLOW_MULTIPLE', 'Escalade remove_group 0');
 $_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 1;
+$_SESSION['glpi_plugins']['escalade']['config']['remove_group'] = 'unexpected';
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Escalade unexpected remove_group gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+unset($_SESSION['glpi_plugins']['escalade']['config']);
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Escalade missing configuration gate');
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '0';
+expect((new PolicyResolver())->resolve([], $simpleDelta)['reason'] === 'NOT_ACTED_INTEGRATION_DISABLED', 'Escalade authorization gate');
+Config::$values[PluginConfig::CONTEXT]['integration_escalade_enabled'] = '1';
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+foreach (['2.9.17', '2.10.0'] as $version) {
+    Plugin::$info['escalade']['version'] = $version;
+    expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_VERSION_UNSUPPORTED', 'Escalade unsupported version ' . $version);
+}
+Plugin::$info['escalade']['version'] = '2.9.22';
 $_SESSION['glpi_plugins']['escalade']['config']['remove_tech'] = 1;
 expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Escalade coupled actor gate');
 

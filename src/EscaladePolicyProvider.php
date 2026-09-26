@@ -15,8 +15,11 @@ final class EscaladePolicyProvider
         if (!is_array($config) || !array_key_exists('remove_group', $config)) {
             return ['policy' => 'UNKNOWN', 'source' => 'escalade'];
         }
-        if ((string) $config['remove_group'] !== '1') {
+        if ((string) $config['remove_group'] === '0') {
             return ['policy' => 'ALLOW_MULTIPLE', 'source' => 'escalade'];
+        }
+        if ((string) $config['remove_group'] !== '1') {
+            return ['policy' => 'UNKNOWN', 'source' => 'escalade'];
         }
         if ($this->hasCoupledEffect($config, $input)) {
             return ['policy' => 'COUPLED_ACTORS', 'source' => 'escalade'];
