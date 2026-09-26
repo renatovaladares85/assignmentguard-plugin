@@ -497,6 +497,7 @@ $_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
 foreach ([
     '_users_id_assign' => [7],
     '_users_id_assign_deleted' => [['id' => 200, 'users_id' => 7]],
+    '_additional_users_assign' => [8],
 ] as $key => $value) {
     $ticket = makeTicket($groupsA, [
         '_actors' => ['assign' => [$actorA, $actorTechnician, $actorB]],
