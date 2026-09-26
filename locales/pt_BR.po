@@ -1,0 +1,100 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: assignmentguard\n"
+"Language: pt_BR\n"
+"PO-Revision-Date: 2026-09-26 00:00-0300\n"
+"Last-Translator: \n"
+"Language-Team: Portuguese (Brazil)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Assignment Guard"
+msgstr "Assignment Guard"
+
+msgid "Behaviors"
+msgstr "Behaviors"
+
+msgid "Escalade"
+msgstr "Escalade"
+
+msgid "Enable standalone group replacement"
+msgstr "Ativar substituição de grupo standalone"
+
+msgid "Authorize Behaviors as a policy source"
+msgstr "Autorizar Behaviors como fonte de política"
+
+msgid "Authorize Escalade as a policy source"
+msgstr "Autorizar Escalade como fonte de política"
+
+msgid "Enable diagnostic logging"
+msgstr "Ativar log de diagnóstico"
+
+msgid "Yes allows standalone replacement only when no active integration blocks the decision. No disables standalone normalization."
+msgstr "Sim permite a substituição standalone somente quando nenhuma integração ativa bloquear a decisão. Não desativa a normalização standalone."
+
+msgid "Yes allows the Guard to read a supported Behaviors configuration. No keeps an active Behaviors integration unauthorized and blocks normalization safely."
+msgstr "Sim permite que o Guard leia uma configuração suportada do Behaviors. Não mantém uma integração Behaviors ativa sem autorização e bloqueia a normalização com segurança."
+
+msgid "Yes allows the Guard to read a supported Escalade configuration. No keeps an active Escalade integration unauthorized and blocks normalization safely."
+msgstr "Sim permite que o Guard leia uma configuração suportada do Escalade. Não mantém uma integração Escalade ativa sem autorização e bloqueia a normalização com segurança."
+
+msgid "Yes enables optional diagnostic details according to the Guard logging policy. No disables those details without changing the functional rule."
+msgstr "Sim ativa detalhes opcionais de diagnóstico conforme a política de logs do Guard. Não desativa esses detalhes sem mudar a regra funcional."
+
+msgid "Integration status"
+msgstr "Status das integrações"
+
+msgid "Installed"
+msgstr "Instalado"
+
+msgid "Active"
+msgstr "Ativo"
+
+msgid "Version"
+msgstr "Versão"
+
+msgid "Supported"
+msgstr "Suportado"
+
+msgid "Authorized"
+msgstr "Autorizado"
+
+msgid "Effective policy"
+msgstr "Política efetiva"
+
+msgid "Final state"
+msgstr "Estado final"
+
+msgid "Replace group"
+msgstr "Substituir grupo"
+
+msgid "Allow multiple groups"
+msgstr "Permitir múltiplos grupos"
+
+msgid "Unknown"
+msgstr "Desconhecido"
+
+msgid "Coupled actors"
+msgstr "Atores acoplados"
+
+msgid "Not installed"
+msgstr "Não instalado"
+
+msgid "Inactive"
+msgstr "Inativo"
+
+msgid "Unsupported"
+msgstr "Não suportado"
+
+msgid "Not authorized"
+msgstr "Não autorizado"
+
+msgid "Blocked"
+msgstr "Bloqueado"
+
+msgid "Ready"
+msgstr "Pronto"
+
+msgid "Not available"
+msgstr "Não disponível"
