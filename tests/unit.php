@@ -52,9 +52,11 @@ class Plugin
 {
     public static $active = [];
     public static $info = [];
+    public static $installed = [];
     public static $getInfoCalls = 0;
     public static function isPluginActive($name) { return !empty(self::$active[$name]); }
     public static function getInfo($name, $key = null) { self::$getInfoCalls++; return self::$info[$name][$key] ?? null; }
+    public function isInstalled($name) { return !empty(self::$installed[$name]); }
 }
 
 class PluginBehaviorsConfig
@@ -80,6 +82,7 @@ use GlpiPlugin\Assignmentguard\ActorInputParser;
 use GlpiPlugin\Assignmentguard\AssignmentDecision;
 use GlpiPlugin\Assignmentguard\DecisionLogger;
 use GlpiPlugin\Assignmentguard\GroupInputNormalizer;
+use GlpiPlugin\Assignmentguard\IntegrationStatus;
 use GlpiPlugin\Assignmentguard\PluginConfig;
 use GlpiPlugin\Assignmentguard\PolicyResolver;
 
@@ -107,6 +110,17 @@ function parseWithoutMutation($parser, $groups, $input, $message)
     $delta = $parser->parse($ticket, $ticket->input);
     expect($ticket->input === $snapshot, $message . ' must not mutate ticket input');
     return $delta;
+}
+
+class CountingPolicyProvider
+{
+    public $calls = 0;
+    public $policy = 'REPLACE';
+    public function resolve(array $input): array
+    {
+        $this->calls++;
+        return ['policy' => $this->policy];
+    }
 }
 
 $PLUGIN_HOOKS = [];
@@ -144,6 +158,32 @@ Config::$values = [
     ],
 ];
 Plugin::$active = [];
+
+$statusProvider = new CountingPolicyProvider();
+$status = IntegrationStatus::resolve('behaviors', true, true, '2.7.8', false, $statusProvider);
+expect($status['state'] === 'not_authorized' && $status['severity'] === 'blocked' && $status['policy'] === 'UNKNOWN', 'P4 unauthorized integration status');
+expect($statusProvider->calls === 0, 'P4 must not read an unauthorized provider');
+$status = IntegrationStatus::resolve('behaviors', true, true, '2.7.8', true, $statusProvider);
+expect($status['state'] === 'ready' && $status['severity'] === 'ok' && $status['policy'] === 'REPLACE', 'P4 authorized integration status');
+expect($statusProvider->calls === 1, 'P4 may read an authorized provider');
+$status = IntegrationStatus::resolve('escalade', true, true, '2.10.0', true, $statusProvider);
+expect($status['state'] === 'unsupported' && $status['severity'] === 'blocked' && $statusProvider->calls === 1, 'P4 unsupported integration status');
+$status = IntegrationStatus::resolve('behaviors', true, false, '2.7.8', false, $statusProvider);
+expect($status['supported'] === true && $status['severity'] === 'warning', 'P4 inactive supported version status');
+$status = IntegrationStatus::resolve('behaviors', false, false, null, false, $statusProvider);
+expect($status['state'] === 'not_installed' && $status['severity'] === 'warning', 'P4 missing integration status');
+$statusProvider->policy = 'UNKNOWN';
+$status = IntegrationStatus::resolve('behaviors', true, true, '2.7.8', true, $statusProvider);
+expect($status['state'] === 'blocked' && $status['severity'] === 'blocked', 'P4 unknown policy severity');
+$statusProvider->policy = 'COUPLED_ACTORS';
+$status = IntegrationStatus::resolve('behaviors', true, true, '2.7.8', true, $statusProvider);
+expect($status['state'] === 'blocked' && $status['severity'] === 'blocked', 'P4 coupled policy severity');
+$configPage = file_get_contents(dirname(__DIR__) . '/front/config.form.php');
+expect(strpos($configPage, 'Html::showToolTip') !== false, 'P4 config help structure');
+expect(strpos($configPage, 'IntegrationStatus::resolve') !== false, 'P4 config status structure');
+expect(strpos($configPage, "__('Condition', 'assignmentguard')") !== false, 'P4 condition label');
+expect(is_file(dirname(__DIR__) . '/locales/pt_BR.po'), 'P4 pt_BR catalog');
+expect(is_file(dirname(__DIR__) . '/locales/pt_BR.mo'), 'P4 compiled pt_BR catalog');
 
 $events = [];
 $lines = [];
