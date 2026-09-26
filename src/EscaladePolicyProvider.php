@@ -38,6 +38,7 @@ final class EscaladePolicyProvider
             'use_assign_user_group_modification',
             'reassign_group_from_cat',
             'reassign_tech_from_cat',
+            'solve_return_group',
         ] as $key) {
             if (!array_key_exists($key, $config) || !in_array((string) $config[$key], ['0', '1'], true)) {
                 return false;
@@ -73,6 +74,9 @@ final class EscaladePolicyProvider
         }
         if ((!empty($config['reassign_group_from_cat']) || !empty($config['reassign_tech_from_cat']))
             && array_key_exists('itilcategories_id', $input)) {
+            return true;
+        }
+        if (!empty($config['solve_return_group']) && array_key_exists('status', $input)) {
             return true;
         }
         return false;
