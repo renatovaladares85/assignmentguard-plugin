@@ -12,6 +12,11 @@ final class ActorInputParser
         }
 
         if (array_key_exists('_actors', $input)) {
+            if (array_key_exists('_users_id_assign', $input)
+                || array_key_exists('_users_id_assign_deleted', $input)
+                || array_key_exists('_additional_users_assign', $input)) {
+                return ['recognized' => false, 'reason' => 'NOT_ACTED_COUPLED_ACTORS'];
+            }
             $existingUsers = $this->existingAssignUsers($ticket);
             if ($existingUsers === null) {
                 return ['recognized' => false, 'reason' => 'NOT_ACTED_UNSUPPORTED_CONTEXT'];

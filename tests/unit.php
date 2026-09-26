@@ -422,6 +422,8 @@ $safeEscaladeConfig = [
     'use_assign_user_group' => 0,
     'use_assign_user_group_modification' => 0,
     'reassign_group_from_cat' => 0,
+    'reassign_tech_from_cat' => 0,
+    'solve_return_group' => 0,
 ];
 $_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
 foreach (['2.9.18', '2.9.19', '2.9.20', '2.9.21', '2.9.22'] as $version) {
@@ -450,8 +452,69 @@ foreach (['2.9.17', '2.10.0'] as $version) {
     expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_VERSION_UNSUPPORTED', 'Escalade unsupported version ' . $version);
 }
 Plugin::$info['escalade']['version'] = '2.9.22';
-$_SESSION['glpi_plugins']['escalade']['config']['remove_tech'] = 1;
-expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Escalade coupled actor gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig + ['show_history' => 1];
+expect((new PolicyResolver())->resolve([])['policy'] === 'REPLACE', 'Escalade history-only configuration remains safe');
+foreach (['remove_tech', 'remove_requester'] as $key) {
+    $_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+    $_SESSION['glpi_plugins']['escalade']['config'][$key] = 1;
+    expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Escalade ' . $key . ' gate');
+}
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['ticket_last_status'] = 2;
+expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Escalade managed status gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['use_assign_user_group'] = 1;
+$_SESSION['glpi_plugins']['escalade']['config']['use_assign_user_group_modification'] = 1;
+expect((new PolicyResolver())->resolve([], ['assign_users_changed' => true])['policy'] === 'COUPLED_ACTORS', 'Escalade technician group gate');
+expect((new PolicyResolver())->resolve(['_actors' => ['assign' => [$actorTechnician]]], ['assign_users_changed' => false])['policy'] === 'REPLACE', 'Escalade unchanged technician is not a coupled operation');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['reassign_group_from_cat'] = 1;
+expect((new PolicyResolver())->resolve(['itilcategories_id' => 12])['policy'] === 'COUPLED_ACTORS', 'Escalade category reassignment gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['reassign_tech_from_cat'] = 1;
+expect((new PolicyResolver())->resolve(['itilcategories_id' => 12])['policy'] === 'COUPLED_ACTORS', 'Escalade category technician gate');
+$ticket = makeTicket($groupsA, [
+    'itilcategories_id' => 12,
+    '_actors' => ['assign' => [$actorA, $actorB]],
+]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Escalade category technician gate must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Escalade category technician decision');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['solve_return_group'] = 1;
+expect((new PolicyResolver())->resolve([])['policy'] === 'REPLACE', 'Escalade solve return without status remains safe');
+expect((new PolicyResolver())->resolve(['status' => 5])['policy'] === 'COUPLED_ACTORS', 'Escalade solve return status gate');
+$ticket = makeTicket($groupsA, [
+    'status' => 5,
+    '_actors' => ['assign' => [$actorA, $actorB]],
+]);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Escalade solve return gate must preserve input');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Escalade solve return decision');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+foreach ([
+    '_users_id_assign' => [7],
+    '_users_id_assign_deleted' => [['id' => 200, 'users_id' => 7]],
+    '_additional_users_assign' => [8],
+] as $key => $value) {
+    $ticket = makeTicket($groupsA, [
+        '_actors' => ['assign' => [$actorA, $actorTechnician, $actorB]],
+        $key => $value,
+    ], $usersTechnician);
+    $before = $ticket->input;
+    AssignmentGuardHookHandler::handle($ticket);
+    expect($ticket->input === $before, 'Mixed actor input must preserve input for ' . $key);
+    expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Mixed actor input decision for ' . $key);
+}
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+unset($_SESSION['glpi_plugins']['escalade']['config']['remove_tech']);
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Escalade incomplete coupling configuration gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
+$_SESSION['glpi_plugins']['escalade']['config']['use_assign_user_group'] = 9;
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Escalade invalid coupling configuration gate');
+$_SESSION['glpi_plugins']['escalade']['config'] = $safeEscaladeConfig;
 
 Plugin::$active = ['behaviors' => true, 'escalade' => true];
 Plugin::$info = ['behaviors' => ['version' => '2.7.8'], 'escalade' => ['version' => '2.9.22']];
