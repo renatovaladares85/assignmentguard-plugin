@@ -25,9 +25,11 @@ final class PolicyResolver
                     'reason' => AssignmentDecision::NOT_ACTED_INTEGRATION_DISABLED,
                 ];
             }
-            $provider = $name === 'behaviors'
-                ? new BehaviorsPolicyProvider() : new EscaladePolicyProvider();
-            $result = $provider->resolve($input);
+            if ($name === 'behaviors') {
+                $result = (new BehaviorsPolicyProvider())->resolve($input);
+            } else {
+                $result = (new EscaladePolicyProvider())->resolve($input, $delta);
+            }
             if ($result['policy'] === AssignmentDecision::POLICY_UNKNOWN) {
                 return $result + ['reason' => AssignmentDecision::NOT_ACTED_INTEGRATION_POLICY_UNKNOWN];
             }
