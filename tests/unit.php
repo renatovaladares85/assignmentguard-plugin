@@ -63,8 +63,17 @@ class PluginBehaviorsConfig
 {
     public static $mode = 0;
     public static $getInstanceCalls = 0;
-    public static function getInstance() { self::$getInstanceCalls++; return new self(); }
-    public function getField($name) { return self::$mode; }
+    public static $throwOnGetInstance = false;
+    public static $throwOnGetField = false;
+    public static function getInstance() {
+        self::$getInstanceCalls++;
+        if (self::$throwOnGetInstance) { throw new RuntimeException('simulated config access failure'); }
+        return new self();
+    }
+    public function getField($name) {
+        if (self::$throwOnGetField) { throw new RuntimeException('simulated config read failure'); }
+        return self::$mode;
+    }
 }
 
 class Toolbox
@@ -369,10 +378,33 @@ PluginBehaviorsConfig::$mode = 1;
 expect((new PolicyResolver())->resolve([])['policy'] === 'REPLACE', 'Behaviors mode 1');
 PluginBehaviorsConfig::$mode = 2;
 expect((new PolicyResolver())->resolve([])['policy'] === 'COUPLED_ACTORS', 'Behaviors mode 2');
+PluginBehaviorsConfig::$mode = 'invalid';
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Behaviors invalid mode gate');
+PluginBehaviorsConfig::$throwOnGetInstance = true;
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Behaviors inaccessible configuration gate');
+PluginBehaviorsConfig::$throwOnGetInstance = false;
+PluginBehaviorsConfig::$throwOnGetField = true;
+expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_POLICY_UNKNOWN', 'Behaviors unreadable configuration value gate');
+PluginBehaviorsConfig::$throwOnGetField = false;
 Plugin::$info['behaviors']['version'] = '2.7.7';
 expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_VERSION_UNSUPPORTED', 'Behaviors version gate');
+expect(PluginBehaviorsConfig::$getInstanceCalls === 6, 'Behaviors unsupported version must not read configuration');
+Plugin::$info['behaviors']['version'] = '2.7.8';
 Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '0';
 expect((new PolicyResolver())->resolve([])['reason'] === 'NOT_ACTED_INTEGRATION_DISABLED', 'Behaviors authorization gate');
+expect(PluginBehaviorsConfig::$getInstanceCalls === 6, 'Behaviors disabled integration must not read configuration');
+Config::$values[PluginConfig::CONTEXT]['integration_behaviors_enabled'] = '1';
+PluginBehaviorsConfig::$mode = 1;
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorB]]]);
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input['_actors']['assign'] === [$actorB], 'Behaviors mode 1 normalizes only the simple group replacement');
+expect(end($events)['decision'] === 'ACTED_GROUP_REPLACEMENT', 'Behaviors mode 1 decision');
+PluginBehaviorsConfig::$mode = 2;
+$ticket = makeTicket($groupsA, ['_actors' => ['assign' => [$actorA, $actorTechnician, $actorB]]], $usersTechnician);
+$before = $ticket->input;
+AssignmentGuardHookHandler::handle($ticket);
+expect($ticket->input === $before, 'Behaviors mode 2 must not normalize coupled actors');
+expect(end($events)['decision'] === 'NOT_ACTED_COUPLED_ACTORS', 'Behaviors mode 2 decision');
 
 Plugin::$active = ['escalade' => true];
 Plugin::$info = ['escalade' => ['version' => '2.9.22']];
