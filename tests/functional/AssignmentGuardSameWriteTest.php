@@ -8,7 +8,7 @@ use GlpiPlugin\Assignmentguard\DecisionLogger;
 /**
  * Executed by the GLPI 10.0.20 lifecycle CI job with the plugin enabled.
  */
-class AssignmentGuardSameWriteTest extends DbTestCase
+class Ticket extends DbTestCase
 {
     public function testGroupReplacementChangesSlaInOneNativeTicketUpdate(): void
     {
