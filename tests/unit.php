@@ -646,12 +646,29 @@ expect(strpos($loggedLines[0], 'Ticket subject that must not be logged') === fal
 expect(strpos($loggedLines[0], 'Ticket content that must not be logged') === false, 'P8 log must not contain ticket content');
 expect(strpos($loggedLines[0], '@example.test') === false, 'P8 log must not contain email');
 
-$guardSources = '';
-foreach (['AssignmentGuardHookHandler.php', 'ActorInputParser.php', 'GroupInputNormalizer.php', 'PolicyResolver.php'] as $file) {
-    $guardSources .= file_get_contents(dirname(__DIR__) . '/src/' . $file);
+$pluginRoot = dirname(__DIR__);
+$productionSources = [];
+$excludedSourceDirectories = ['.git', 'tests', 'vendor'];
+$sourceIterator = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS)
+);
+foreach ($sourceIterator as $sourceFile) {
+    if (!$sourceFile->isFile() || $sourceFile->getExtension() !== 'php') {
+        continue;
+    }
+    $relativePath = str_replace('\\', '/', $sourceIterator->getSubPathname());
+    $pathParts = explode('/', $relativePath);
+    if (in_array($pathParts[0], $excludedSourceDirectories, true) || $relativePath === '.php-cs-fixer.php') {
+        continue;
+    }
+    $productionSources[$relativePath] = $sourceFile->getPathname();
 }
+ksort($productionSources);
+expect(count($productionSources) > 0, 'P8 production sources must be discovered');
 foreach (['RuleTicketCollection', 'Group_Ticket::delete', '->update(', 'slas_id_ttr', '$DB->'] as $forbidden) {
-    expect(strpos($guardSources, $forbidden) === false, 'P8 forbidden operation absent: ' . $forbidden);
+    foreach ($productionSources as $relativePath => $sourcePath) {
+        expect(strpos(file_get_contents($sourcePath), $forbidden) === false, 'P8 forbidden operation absent: ' . $forbidden . ' in ' . $relativePath);
+    }
 }
 
 echo "OK: " . count($events) . " decision cases validated\n";
