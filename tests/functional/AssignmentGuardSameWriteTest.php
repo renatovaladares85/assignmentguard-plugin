@@ -13,6 +13,12 @@ class Ticket extends DbTestCase
     public function testGroupReplacementChangesSlaInOneNativeTicketUpdate(): void
     {
         $this->login();
+        $plugin = new \Plugin();
+        $plugin->checkPluginState('assignmentguard');
+        $this->boolean($plugin->getFromDBByDir('assignmentguard'))->isTrue();
+        $pluginId = (int) $plugin->fields['id'];
+        $plugin->install($pluginId);
+        $plugin->activate($pluginId);
         $this->boolean(\Plugin::isPluginActive('assignmentguard'))->isTrue();
 
         $entityId = $this->getTestRootEntity(true);
