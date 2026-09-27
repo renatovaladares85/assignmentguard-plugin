@@ -641,6 +641,7 @@ expect($ticket->input['_actors']['requester'] === $sensitiveInput['_actors']['re
 expect($ticket->input['_actors']['observer'] === $sensitiveInput['_actors']['observer'], 'P8 observer must be preserved');
 expect($ticket->input['_actors']['assign'] === [['itemtype' => 'Supplier', 'items_id' => 72], $actorB], 'P8 supplier and B must be preserved');
 expect(count($loggedDecisions) === 1 && $loggedDecisions[0]['decision'] === 'ACTED_GROUP_REPLACEMENT', 'P8 exactly one primary decision');
+expect($loggedDecisions[0]['acted'] === true, 'P8 acted flag must be true after normalization');
 expect(strpos($loggedLines[0], 'Ticket subject that must not be logged') === false, 'P8 log must not contain ticket name');
 expect(strpos($loggedLines[0], 'Ticket content that must not be logged') === false, 'P8 log must not contain ticket content');
 expect(strpos($loggedLines[0], '@example.test') === false, 'P8 log must not contain email');
