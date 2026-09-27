@@ -35,11 +35,15 @@ class Ticket extends DbTestCase
             'name'         => $this->getUniqueString(),
             'type'         => \SLM::TTR,
             'calendars_id' => 0,
+            'number_time'  => 4,
+            'definition_time' => 'hour',
         ]);
         $slaB = $this->createItem(\SLA::class, [
             'name'         => $this->getUniqueString(),
             'type'         => \SLM::TTR,
             'calendars_id' => 0,
+            'number_time'  => 4,
+            'definition_time' => 'hour',
         ]);
 
         $this->createRule((new \RuleBuilder($this->getUniqueString()))
