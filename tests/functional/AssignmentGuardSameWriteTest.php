@@ -18,7 +18,8 @@ class Ticket extends DbTestCase
         $this->boolean($plugin->getFromDBByDir('assignmentguard'))->isTrue();
         $pluginId = (int) $plugin->fields['id'];
         $plugin->install($pluginId);
-        $plugin->activate($pluginId);
+        $this->boolean($plugin->activate($pluginId))->isTrue();
+        $plugin->init(true);
 
         $entityId = $this->getTestRootEntity(true);
         $groupA = $this->createItem(\Group::class, [
