@@ -619,4 +619,38 @@ expect(count(Toolbox::$lines) === 1, 'GLPI logger must receive one decision');
 expect(Toolbox::$lines[0][0] === 'assignmentguard' && Toolbox::$lines[0][2] === true, 'GLPI logger target');
 expect(is_array(json_decode(Toolbox::$lines[0][1], true)), 'GLPI logger JSON line');
 
+$sensitiveInput = [
+    'name' => 'Ticket subject that must not be logged',
+    'content' => 'Ticket content that must not be logged',
+    '_actors' => [
+        'requester' => [['itemtype' => 'User', 'items_id' => 70, 'alternative_email' => 'requester@example.test']],
+        'observer' => [['itemtype' => 'User', 'items_id' => 71, 'alternative_email' => 'observer@example.test']],
+        'assign' => [$actorA, ['itemtype' => 'Supplier', 'items_id' => 72], $actorB],
+    ],
+];
+$loggedDecisions = [];
+$loggedLines = [];
+DecisionLogger::setWriterForTests(static function ($line, $decision) use (&$loggedDecisions, &$loggedLines) {
+    $loggedDecisions[] = $decision;
+    $loggedLines[] = $line;
+});
+$ticket = makeTicket($groupsA, $sensitiveInput);
+AssignmentGuardHookHandler::handle($ticket);
+DecisionLogger::setWriterForTests(null);
+expect($ticket->input['_actors']['requester'] === $sensitiveInput['_actors']['requester'], 'P8 requester must be preserved');
+expect($ticket->input['_actors']['observer'] === $sensitiveInput['_actors']['observer'], 'P8 observer must be preserved');
+expect($ticket->input['_actors']['assign'] === [['itemtype' => 'Supplier', 'items_id' => 72], $actorB], 'P8 supplier and B must be preserved');
+expect(count($loggedDecisions) === 1 && $loggedDecisions[0]['decision'] === 'ACTED_GROUP_REPLACEMENT', 'P8 exactly one primary decision');
+expect(strpos($loggedLines[0], 'Ticket subject that must not be logged') === false, 'P8 log must not contain ticket name');
+expect(strpos($loggedLines[0], 'Ticket content that must not be logged') === false, 'P8 log must not contain ticket content');
+expect(strpos($loggedLines[0], '@example.test') === false, 'P8 log must not contain email');
+
+$guardSources = '';
+foreach (['AssignmentGuardHookHandler.php', 'ActorInputParser.php', 'GroupInputNormalizer.php', 'PolicyResolver.php'] as $file) {
+    $guardSources .= file_get_contents(dirname(__DIR__) . '/src/' . $file);
+}
+foreach (['RuleTicketCollection', 'Group_Ticket::delete', '->update(', 'slas_id_ttr', '$DB->'] as $forbidden) {
+    expect(strpos($guardSources, $forbidden) === false, 'P8 forbidden operation absent: ' . $forbidden);
+}
+
 echo "OK: " . count($events) . " decision cases validated\n";
