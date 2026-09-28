@@ -113,16 +113,13 @@ class Ticket extends DbTestCase
         $this->login();
         $plugin = new \Plugin();
         foreach (['assignmentguard', 'behaviors', 'escalade'] as $directory) {
-            if ($directory === 'assignmentguard') {
-                $plugin->checkPluginState($directory);
-            } else {
-                $reporting = error_reporting();
-                error_reporting($reporting & ~E_USER_DEPRECATED);
-                try {
-                    $plugin->checkPluginState($directory);
-                } finally {
-                    error_reporting($reporting);
-                }
+            if (!$plugin->getFromDBByDir($directory)) {
+                $information = $plugin->getInformationsFromDirectory($directory);
+                $this->array($information)->isNotEmpty();
+                $plugin->add(array_merge($information, [
+                    'directory' => $directory,
+                    'state'     => \Plugin::NOTINSTALLED,
+                ]));
             }
             $this->boolean($plugin->getFromDBByDir($directory))->isTrue();
             if (!\Plugin::isPluginActive($directory)) {
