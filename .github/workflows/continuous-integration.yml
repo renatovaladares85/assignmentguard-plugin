@@ -35,15 +35,19 @@ jobs:
       - name: PHP syntax
         run: find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 
-  lifecycle-glpi-10-0-20:
-    name: GLPI 10.0.20 lifecycle smoke
+  lifecycle-glpi-10:
+    name: GLPI ${{ matrix.glpi-version }} lifecycle and regression
+    strategy:
+      fail-fast: false
+      matrix:
+        glpi-version: ["10.0.20", "10.0.21", "10.0.22", "10.0.23", "10.0.24", "10.0.25", "10.0.26"]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout GLPI 10.0.20
+      - name: Checkout GLPI ${{ matrix.glpi-version }}
         uses: actions/checkout@v7
         with:
           repository: glpi-project/glpi
-          ref: 10.0.20
+          ref: ${{ matrix.glpi-version }}
           path: glpi
       - name: Checkout plugin with its GLPI key
         uses: actions/checkout@v7
@@ -54,9 +58,17 @@ jobs:
         run: |
           make init-override
           sudo chown -R 1000:1000 .
-      - name: Start GLPI 10.0.20
+      - name: Start GLPI ${{ matrix.glpi-version }}
         working-directory: glpi
-        run: make build up vendor db-install test-db-install
+        run: |
+          # GLPI 10.0.21+ declares an optional OpenLDAP development service
+          # whose unpinned upstream `latest` image is no longer published.
+          # Assignment Guard's lifecycle coverage needs only the app and db
+          # services (the app itself depends on db), so keep the bootstrap
+          # limited to those required services.
+          docker compose build --no-cache app
+          docker compose up -d app db
+          make vendor db-install test-db-install
       - name: Verify discovery and lifecycle
         working-directory: glpi
         run: |
@@ -64,7 +76,10 @@ jobs:
           docker compose exec -T app bin/console list --raw | grep -q '^plugin:install'
           docker compose exec -T app bin/console plugin:install assignmentguard -u glpi
           docker compose exec -T app bin/console plugin:enable assignmentguard
-      - name: Run GLPI 10.0.20 same-write SLA regression
+      - name: Run standalone safety regressions
+        working-directory: glpi
+        run: docker compose exec -T app php plugins/assignmentguard/tests/unit.php
+      - name: Run GLPI ${{ matrix.glpi-version }} same-write SLA regression
         working-directory: glpi
         run: |
           docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc -f plugins/assignmentguard/tests/functional/AssignmentGuardSameWriteTest.php
