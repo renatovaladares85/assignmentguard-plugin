@@ -115,6 +115,15 @@ class Ticket extends DbTestCase
         foreach (['assignmentguard', 'behaviors', 'escalade'] as $directory) {
             if ($directory === 'assignmentguard') {
                 $plugin->checkPluginState($directory);
+            } else {
+                set_error_handler(static function (int $severity): bool {
+                    return $severity === E_USER_DEPRECATED;
+                });
+                try {
+                    $plugin->checkPluginState($directory);
+                } finally {
+                    restore_error_handler();
+                }
             }
             $this->boolean($plugin->getFromDBByDir($directory))->isTrue();
             if (!\Plugin::isPluginActive($directory)) {
