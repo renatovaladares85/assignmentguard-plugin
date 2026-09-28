@@ -92,3 +92,100 @@ jobs:
         if: always()
         working-directory: glpi
         run: docker compose down --volumes
+
+  integration-matrix:
+    name: GLPI 10.0.26 / ${{ matrix.db-image }} / Behaviors 2.7.8 / Escalade ${{ matrix.escalade-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - escalade-version: "2.9.18"
+            db-image: "mysql:5.7"
+          - escalade-version: "2.9.19"
+            db-image: "mariadb:10.2"
+          - escalade-version: "2.9.20"
+            db-image: "mariadb:10.2"
+          - escalade-version: "2.9.21"
+            db-image: "mariadb:10.2"
+          - escalade-version: "2.9.22"
+            db-image: "mariadb:10.2"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GLPI 10.0.26
+        uses: actions/checkout@v7
+        with:
+          repository: glpi-project/glpi
+          ref: 10.0.26
+          path: glpi
+      - name: Checkout Assignment Guard
+        uses: actions/checkout@v7
+        with:
+          path: glpi/plugins/assignmentguard
+      - name: Checkout Behaviors 2.7.8
+        uses: actions/checkout@v7
+        with:
+          repository: InfotelGLPI/behaviors
+          ref: 2.7.8
+          path: glpi/plugins/behaviors
+      - name: Checkout Escalade ${{ matrix.escalade-version }}
+        uses: actions/checkout@v7
+        with:
+          repository: pluginsGLPI/escalade
+          ref: ${{ matrix.escalade-version }}
+          path: glpi/plugins/escalade
+      - name: Prepare GLPI integration workspace
+        working-directory: glpi
+        run: |
+          make init-override
+          cat > docker-compose.override.yaml <<'EOF'
+          services:
+            db:
+              image: ${{ matrix.db-image }}
+              environment:
+                MYSQL_ROOT_PASSWORD: glpi
+                MYSQL_DATABASE: glpi
+                MYSQL_USER: glpi
+                MYSQL_PASSWORD: glpi
+          EOF
+          sudo chown -R 1000:1000 .
+      - name: Start GLPI 10.0.26 with ${{ matrix.db-image }}
+        working-directory: glpi
+        run: |
+          docker compose build --no-cache app
+          docker compose up -d app db
+          make vendor db-install test-db-install
+      - name: Record exact integration environment
+        working-directory: glpi
+        run: |
+          printf 'GLPI ref: '; git rev-parse HEAD
+          printf 'Behaviors ref: '; git -C plugins/behaviors rev-parse HEAD
+          printf 'Escalade ref: '; git -C plugins/escalade rev-parse HEAD
+          docker compose exec -T app php --version
+          docker compose exec -T db sh -c 'mariadb --version || mysql --version'
+      - name: Install and enable tested plugins
+        working-directory: glpi
+        run: |
+          for plugin in assignmentguard behaviors escalade; do
+            docker compose exec -T app bin/console plugin:install "$plugin" -u glpi
+            docker compose exec -T app bin/console plugin:enable "$plugin"
+          done
+      - name: Run standalone and unsupported-version safety gates
+        working-directory: glpi
+        run: docker compose exec -T app php plugins/assignmentguard/tests/unit.php
+      - name: Run external integration policy regression
+        working-directory: glpi
+        run: |
+          docker compose exec -e ASSIGNMENTGUARD_ESCALADE_VERSION=${{ matrix.escalade-version }} -T app \
+            ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
+            -f plugins/assignmentguard/tests/functional/AssignmentGuardIntegrationPolicyTest.php
+      - name: Verify integration lifecycle teardown
+        working-directory: glpi
+        run: |
+          for plugin in assignmentguard escalade behaviors; do
+            docker compose exec -T app bin/console plugin:disable "$plugin"
+            docker compose exec -T app bin/console plugin:uninstall "$plugin"
+          done
+      - name: Stop GLPI integration workspace
+        if: always()
+        working-directory: glpi
+        run: docker compose down --volumes
