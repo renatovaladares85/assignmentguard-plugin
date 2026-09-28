@@ -116,13 +116,12 @@ class Ticket extends DbTestCase
             if ($directory === 'assignmentguard') {
                 $plugin->checkPluginState($directory);
             } else {
-                set_error_handler(static function (int $severity): bool {
-                    return $severity === E_USER_DEPRECATED;
-                });
+                $reporting = error_reporting();
+                error_reporting($reporting & ~E_USER_DEPRECATED);
                 try {
                     $plugin->checkPluginState($directory);
                 } finally {
-                    restore_error_handler();
+                    error_reporting($reporting);
                 }
             }
             $this->boolean($plugin->getFromDBByDir($directory))->isTrue();
