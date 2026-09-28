@@ -60,7 +60,15 @@ jobs:
           sudo chown -R 1000:1000 .
       - name: Start GLPI ${{ matrix.glpi-version }}
         working-directory: glpi
-        run: make build up vendor db-install test-db-install
+        run: |
+          # GLPI 10.0.21+ declares an optional OpenLDAP development service
+          # whose unpinned upstream `latest` image is no longer published.
+          # Assignment Guard's lifecycle coverage needs only the app and db
+          # services (the app itself depends on db), so keep the bootstrap
+          # limited to those required services.
+          docker compose build --no-cache app
+          docker compose up -d app db
+          make vendor db-install test-db-install
       - name: Verify discovery and lifecycle
         working-directory: glpi
         run: |
