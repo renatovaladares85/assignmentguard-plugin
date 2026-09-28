@@ -165,6 +165,7 @@ jobs:
       - name: Install and enable tested plugins
         working-directory: glpi
         run: |
+          docker compose exec -T app sh -lc 'cd plugins/escalade && composer install --no-dev --no-interaction --prefer-dist'
           for plugin in assignmentguard behaviors escalade; do
             docker compose exec -T app bin/console plugin:install "$plugin" -u glpi
             docker compose exec -T app bin/console plugin:enable "$plugin"

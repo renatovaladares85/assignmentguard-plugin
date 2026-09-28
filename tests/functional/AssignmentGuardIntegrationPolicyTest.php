@@ -1,19 +1,18 @@
 <?php
 
-namespace tests\units;
+namespace tests\units\GlpiPlugin\Assignmentguard;
 
 use DbTestCase;
 use GlpiPlugin\Assignmentguard\AssignmentDecision;
 use GlpiPlugin\Assignmentguard\DecisionLogger;
 use GlpiPlugin\Assignmentguard\PluginConfig;
-use GlpiPlugin\Assignmentguard\PolicyResolver;
 
 /**
  * Executed in CI with Behaviors 2.7.8 and an exact supported Escalade tag.
  * It reads the third-party plugins' real GLPI configuration, but never calls
  * their corrective methods directly.
  */
-class AssignmentGuardIntegrationPolicy extends DbTestCase
+class PolicyResolver extends DbTestCase
 {
     public function testReadsSupportedExternalPoliciesAndSafeCombinedUpdate(): void
     {
@@ -23,20 +22,20 @@ class AssignmentGuardIntegrationPolicy extends DbTestCase
         $this->setIntegrationPlugins(true, false);
         $this->configureBehaviors(0);
         $this->configureGuard(true, false);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_ALLOW_MULTIPLE);
 
         $this->configureBehaviors(1);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_REPLACE);
 
         $this->configureBehaviors(2);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_COUPLED_ACTORS);
 
         $this->configureBehaviors(1);
         $this->configureGuard(false, false);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['reason'])->isIdenticalTo(AssignmentDecision::NOT_ACTED_INTEGRATION_DISABLED);
 
         $this->setIntegrationPlugins(false, true);
@@ -44,26 +43,26 @@ class AssignmentGuardIntegrationPolicy extends DbTestCase
         $this->configureEscalade([
             'remove_group' => 0,
         ]);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_ALLOW_MULTIPLE);
 
         $this->configureEscalade([
             'remove_group' => 1,
         ]);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_REPLACE);
 
         $this->configureEscalade([
             'remove_tech' => 1,
         ]);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_COUPLED_ACTORS);
 
         $this->configureEscalade([
             'remove_tech'               => 0,
             'reassign_group_from_cat'   => 1,
         ]);
-        $policy = (new PolicyResolver())->resolve(['itilcategories_id' => 1], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve(['itilcategories_id' => 1], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_COUPLED_ACTORS);
 
         $this->configureEscalade([
@@ -73,7 +72,7 @@ class AssignmentGuardIntegrationPolicy extends DbTestCase
         ]);
         $userDelta = $delta;
         $userDelta['assign_users_changed'] = true;
-        $policy = (new PolicyResolver())->resolve([], $userDelta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $userDelta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_COUPLED_ACTORS);
 
         $this->setIntegrationPlugins(true, true);
@@ -83,26 +82,26 @@ class AssignmentGuardIntegrationPolicy extends DbTestCase
         ]);
         $this->configureGuard(true, true);
         $this->configureBehaviors(1);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['policy'])->isIdenticalTo(AssignmentDecision::POLICY_REPLACE);
         $this->string($policy['source'])->isIdenticalTo('combined');
 
         $this->configureEscalade([
             'remove_group' => 0,
         ]);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['reason'])->isIdenticalTo(AssignmentDecision::NOT_ACTED_POLICY_CONFLICT);
 
         $this->configureEscalade([
             'remove_group' => 1,
         ]);
         $this->configureBehaviors(2);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['reason'])->isIdenticalTo(AssignmentDecision::NOT_ACTED_COUPLED_ACTORS);
 
         $this->configureBehaviors(1);
         $this->configureGuard(true, false);
-        $policy = (new PolicyResolver())->resolve([], $delta);
+        $policy = (new \GlpiPlugin\Assignmentguard\PolicyResolver())->resolve([], $delta);
         $this->string($policy['reason'])->isIdenticalTo(AssignmentDecision::NOT_ACTED_INTEGRATION_DISABLED);
 
         $this->configureGuard(true, true);
