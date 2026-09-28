@@ -1,6 +1,6 @@
 <?php
 
-namespace tests\units\GlpiPlugin\Assignmentguard;
+namespace tests\units;
 
 use DbTestCase;
 use GlpiPlugin\Assignmentguard\AssignmentDecision;
@@ -12,7 +12,7 @@ use GlpiPlugin\Assignmentguard\PluginConfig;
  * It reads the third-party plugins' real GLPI configuration, but never calls
  * their corrective methods directly.
  */
-class PolicyResolver extends DbTestCase
+class Ticket extends DbTestCase
 {
     public function testReadsSupportedExternalPoliciesAndSafeCombinedUpdate(): void
     {
