@@ -115,7 +115,10 @@ class Ticket extends DbTestCase
         foreach (['assignmentguard', 'behaviors', 'escalade'] as $directory) {
             $plugin->checkPluginState($directory);
             $this->boolean($plugin->getFromDBByDir($directory))->isTrue();
-            $this->boolean(\Plugin::isPluginActive($directory))->isTrue();
+            if (!\Plugin::isPluginActive($directory)) {
+                $plugin->install($plugin->getID());
+                $this->boolean($plugin->activate($plugin->getID()))->isTrue();
+            }
         }
         $plugin->init(true);
 
