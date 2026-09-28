@@ -177,7 +177,7 @@ jobs:
         working-directory: glpi
         run: |
           docker compose exec -e ASSIGNMENTGUARD_ESCALADE_VERSION=${{ matrix.escalade-version }} -T app \
-            ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
+            ./vendor/bin/atoum -bf plugins/assignmentguard/tests/functional/IntegrationBootstrap.php -mcn 1 -ncc \
             -f plugins/assignmentguard/tests/functional/AssignmentGuardIntegrationPolicyTest.php
       - name: Verify integration lifecycle teardown
         working-directory: glpi
