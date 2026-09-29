@@ -18,9 +18,7 @@ class Ticket
         return false;
     }
 
-    public function loadActors(): void
-    {
-    }
+    public function loadActors(): void {}
 
     /** @return array<int, array{id: int, groups_id: int}> */
     public function getGroups(int $type): array
@@ -43,13 +41,9 @@ class Config
         return [];
     }
 
-    public static function setConfigurationValues(string $context, array $values): void
-    {
-    }
+    public static function setConfigurationValues(string $context, array $values): void {}
 
-    public static function deleteConfigurationValues(string $context, array $names): void
-    {
-    }
+    public static function deleteConfigurationValues(string $context, array $names): void {}
 }
 
 class Plugin
@@ -82,7 +76,5 @@ class PluginBehaviorsConfig
 
 class Toolbox
 {
-    public static function logInFile(string $name, string $line, bool $append): void
-    {
-    }
+    public static function logInFile(string $name, string $line, bool $append): void {}
 }

@@ -4,14 +4,16 @@ namespace GlpiPlugin\Assignmentguard;
 
 final class AssignmentGuardHookHandler
 {
+    /** @param mixed $item */
     public static function handle($item): void
     {
         if (!$item instanceof \Ticket || $item->isNewItem()) {
             return;
         }
         $original = $item->input;
+        $ticketId = $item->fields['id'] ?? null;
         $base = [
-            'ticket_id' => isset($item->fields['id']) ? (int) $item->fields['id'] : null,
+            'ticket_id' => is_int($ticketId) || (is_string($ticketId) && ctype_digit($ticketId)) ? (int) $ticketId : null,
             'acted' => false,
             'policy_source' => 'none',
         ];
@@ -57,17 +59,22 @@ final class AssignmentGuardHookHandler
         }
     }
 
+    /**
+     * @param array<string,mixed> $delta
+     * @return array<string,mixed>
+     */
     private static function groupFields(array $delta): array
     {
         $fields = [];
         foreach (['existing_groups', 'input_groups', 'added_groups', 'removed_groups'] as $name) {
-            if (isset($delta[$name])) {
+            if (isset($delta[$name]) && is_array($delta[$name])) {
                 $fields[$name] = array_values($delta[$name]);
             }
         }
         return $fields;
     }
 
+    /** @param array<string,mixed> $decision */
     private static function log(array $decision): bool
     {
         return DecisionLogger::log($decision);

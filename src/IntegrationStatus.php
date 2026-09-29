@@ -9,6 +9,10 @@ final class IntegrationStatus
         'escalade' => ['2.9.18', '2.9.19', '2.9.20', '2.9.21', '2.9.22'],
     ];
 
+    /**
+     * @param mixed $provider
+     * @return array<string,mixed>
+     */
     public static function resolve(
         string $name,
         bool $installed,
@@ -39,10 +43,14 @@ final class IntegrationStatus
         if (!$authorized) {
             return self::withState($status, 'not_authorized');
         }
+        if (!is_object($provider) || !method_exists($provider, 'resolve')) {
+            return self::withState($status, 'blocked');
+        }
 
         try {
             $result = $provider->resolve([]);
-            $policy = $result['policy'] ?? AssignmentDecision::POLICY_UNKNOWN;
+            $policy = is_array($result) && is_string($result['policy'] ?? null)
+                ? $result['policy'] : AssignmentDecision::POLICY_UNKNOWN;
         } catch (\Throwable $exception) {
             $policy = AssignmentDecision::POLICY_UNKNOWN;
         }
@@ -55,6 +63,10 @@ final class IntegrationStatus
         return self::withState($status, $state);
     }
 
+    /**
+     * @param array<string,mixed> $status
+     * @return array<string,mixed>
+     */
     private static function withState(array $status, string $state): array
     {
         $status['state'] = $state;

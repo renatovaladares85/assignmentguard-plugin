@@ -4,6 +4,10 @@ namespace GlpiPlugin\Assignmentguard;
 
 final class BehaviorsPolicyProvider
 {
+    /**
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
     public function resolve(array $input): array
     {
         $version = $this->version();
@@ -16,13 +20,17 @@ final class BehaviorsPolicyProvider
         try {
             $config = \PluginBehaviorsConfig::getInstance();
             $mode = $config->getField('single_tech_mode');
-            if ((string) $mode === '0') {
+            if (!is_int($mode) && !is_string($mode)) {
+                return ['policy' => 'UNKNOWN', 'source' => 'behaviors'];
+            }
+            $mode = (string) $mode;
+            if ($mode === '0') {
                 return ['policy' => 'ALLOW_MULTIPLE', 'source' => 'behaviors'];
             }
-            if ((string) $mode === '1') {
+            if ($mode === '1') {
                 return ['policy' => 'REPLACE', 'source' => 'behaviors'];
             }
-            if ((string) $mode === '2') {
+            if ($mode === '2') {
                 return ['policy' => 'COUPLED_ACTORS', 'source' => 'behaviors'];
             }
         } catch (\Throwable $exception) {

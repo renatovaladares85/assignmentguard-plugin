@@ -17,6 +17,7 @@ function plugin_init_assignmentguard(): void
     $PLUGIN_HOOKS['config_page']['assignmentguard'] = 'front/config.form.php';
 }
 
+/** @return array<string,mixed> */
 function plugin_version_assignmentguard(): array
 {
     return [

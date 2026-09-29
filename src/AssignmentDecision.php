@@ -27,39 +27,52 @@ final class AssignmentDecision
     public const NOT_ACTED_COUPLED_ACTORS = 'NOT_ACTED_COUPLED_ACTORS';
     public const ERROR_INTERNAL = 'ERROR_INTERNAL';
 
+    /** @param array<string,mixed>|null $delta */
     public static function validateDelta(?array $delta): ?string
     {
         if ($delta === null || empty($delta['recognized'])) {
-            return $delta['reason'] ?? self::NOT_ACTED_UNSUPPORTED_CONTEXT;
+            $reason = $delta['reason'] ?? self::NOT_ACTED_UNSUPPORTED_CONTEXT;
+            return is_string($reason) ? $reason : self::NOT_ACTED_UNSUPPORTED_CONTEXT;
         }
         if (!empty($delta['assign_users_changed'])) {
             return self::NOT_ACTED_COUPLED_ACTORS;
         }
         if (empty($delta['changed'])) {
-            return $delta['reason'] ?? self::NOT_ACTED_NO_GROUP_CHANGE;
+            $reason = $delta['reason'] ?? self::NOT_ACTED_NO_GROUP_CHANGE;
+            return is_string($reason) ? $reason : self::NOT_ACTED_NO_GROUP_CHANGE;
         }
         if (!isset($delta['existing_groups'], $delta['added_groups'], $delta['removed_groups'])) {
             return self::NOT_ACTED_UNSUPPORTED_CONTEXT;
         }
-        if (count($delta['existing_groups']) === 0) {
+        if (!is_array($delta['existing_groups']) || !is_array($delta['added_groups']) || !is_array($delta['removed_groups'])) {
+            return self::NOT_ACTED_UNSUPPORTED_CONTEXT;
+        }
+        $existingGroups = $delta['existing_groups'];
+        $addedGroups = $delta['added_groups'];
+        $removedGroups = $delta['removed_groups'];
+        if (count($existingGroups) === 0) {
             return self::NOT_ACTED_NO_EXISTING_GROUP;
         }
-        if (count($delta['existing_groups']) !== 1) {
+        if (count($existingGroups) !== 1) {
             return self::NOT_ACTED_MULTIPLE_EXISTING_GROUPS;
         }
-        if (count($delta['added_groups']) === 0) {
-            return count($delta['removed_groups']) > 0
+        if (count($addedGroups) === 0) {
+            return count($removedGroups) > 0
                 ? self::NOT_ACTED_ALREADY_REPLACED : self::NOT_ACTED_NO_NEW_GROUP;
         }
-        if (count($delta['added_groups']) !== 1) {
+        if (count($addedGroups) !== 1) {
             return self::NOT_ACTED_MULTIPLE_NEW_GROUPS;
         }
-        if (count($delta['removed_groups']) > 0) {
+        if (count($removedGroups) > 0) {
             return self::NOT_ACTED_ALREADY_REPLACED;
         }
         return null;
     }
 
+    /**
+     * @param array<string,mixed>|null $delta
+     * @return array<string,mixed>
+     */
     public static function standalone(?array $delta, bool $enabled): array
     {
         $reason = self::validateDelta($delta);
