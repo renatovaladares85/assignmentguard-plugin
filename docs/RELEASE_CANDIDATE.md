@@ -10,7 +10,7 @@ bash tools/build-release-package.sh --output "$output_dir"
 bash tools/verify-release-package.sh "$output_dir"/assignmentguard-0.1.0-rc.1.tar.gz
 ```
 
-O construtor usa ordem lexical, timestamp Unix zero, proprietário/grupo numéricos zero e `gzip -n`. Assim, o mesmo commit e os mesmos argumentos geram o mesmo nome, tamanho e SHA-256. A saída registra `NAME`, `SIZE_BYTES` e `SHA256`; esses três valores devem ser copiados para a evidência da validação do candidate, sem publicar o arquivo.
+O construtor lê os arquivos distribuídos diretamente dos blobs de `HEAD`, usa ordem lexical, timestamp Unix zero, proprietário/grupo numéricos zero, permissões explícitas e `gzip -n`. Assim, o mesmo commit e os mesmos argumentos geram o mesmo nome, tamanho e SHA-256, sem depender da conversão de fim de linha do checkout. A CI cria dois candidates e exige bytes idênticos. A saída registra `NAME`, `SIZE_BYTES` e `SHA256`; esses três valores devem ser copiados para a evidência da validação do candidate, sem publicar o arquivo.
 
 ## Conteúdo permitido
 

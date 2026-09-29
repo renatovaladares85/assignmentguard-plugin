@@ -28,7 +28,8 @@ done
 [[ -n "$output_dir" && -n "$candidate" ]] || usage
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-version=$(sed -n "s/^define('PLUGIN_ASSIGNMENTGUARD_VERSION', '\([^']*\)');$/\1/p" "$repo_root/setup.php")
+source_commit=$(git -C "$repo_root" rev-parse --verify HEAD) || { echo 'Could not resolve the package source commit.' >&2; exit 1; }
+version=$(git -C "$repo_root" show "$source_commit:setup.php" | sed -n "s/^define('PLUGIN_ASSIGNMENTGUARD_VERSION', '\([^']*\)');$/\1/p")
 [[ -n "$version" ]] || { echo 'Could not read PLUGIN_ASSIGNMENTGUARD_VERSION.' >&2; exit 1; }
 
 archive_name="assignmentguard-${version}-${candidate}.tar.gz"
@@ -38,7 +39,7 @@ stage_dir=$(mktemp -d)
 trap 'rm -rf "$stage_dir"' EXIT
 
 package_root="$stage_dir/assignmentguard"
-mkdir -p "$package_root/front" "$package_root/locales" "$package_root/src"
+install -d -m 0755 "$package_root" "$package_root/front" "$package_root/locales" "$package_root/src"
 
 files=(
     CHANGELOG.md
@@ -53,13 +54,16 @@ files=(
 )
 
 for file in "${files[@]}"; do
-    [[ -f "$repo_root/$file" && ! -L "$repo_root/$file" ]] || { echo "Invalid package file: $file" >&2; exit 1; }
-    install -m 0644 "$repo_root/$file" "$package_root/$file"
+    git -C "$repo_root" cat-file -e "$source_commit:$file" || { echo "Missing package file in source commit: $file" >&2; exit 1; }
+    git -C "$repo_root" show "$source_commit:$file" > "$package_root/$file"
+    chmod 0644 "$package_root/$file"
 done
 
-for source_file in "$repo_root"/src/*.php; do
-    [[ -f "$source_file" && ! -L "$source_file" ]] || { echo "Invalid source file: $source_file" >&2; exit 1; }
-    install -m 0644 "$source_file" "$package_root/src/$(basename "$source_file")"
+mapfile -t source_files < <(git -C "$repo_root" ls-tree -r --name-only "$source_commit" -- src | awk '/^src\/[^/]+\.php$/')
+[[ ${#source_files[@]} -gt 0 ]] || { echo 'No source files found in source commit.' >&2; exit 1; }
+for source_file in "${source_files[@]}"; do
+    git -C "$repo_root" show "$source_commit:$source_file" > "$package_root/$source_file"
+    chmod 0644 "$package_root/$source_file"
 done
 
 tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
