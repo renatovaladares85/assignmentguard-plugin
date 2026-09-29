@@ -7,11 +7,12 @@ final class DecisionLogger
     /** @var callable|null */
     private static $writer;
 
-    public static function setWriterForTests($writer): void
+    public static function setWriterForTests(?callable $writer): void
     {
         self::$writer = $writer;
     }
 
+    /** @param array<string,mixed> $decision */
     public static function log(array $decision): bool
     {
         try {

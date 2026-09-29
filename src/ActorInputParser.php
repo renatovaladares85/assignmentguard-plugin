@@ -4,6 +4,11 @@ namespace GlpiPlugin\Assignmentguard;
 
 final class ActorInputParser
 {
+    /**
+     * @param object              $ticket
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
     public function parse($ticket, array $input): array
     {
         $existing = $this->existingGroups($ticket);
@@ -37,9 +42,13 @@ final class ActorInputParser
         ];
     }
 
+    /**
+     * @param object $ticket
+     * @return array<int,array<string,mixed>>|null
+     */
     private function existingGroups($ticket): ?array
     {
-        if (!method_exists($ticket, 'getGroups') || !defined('CommonITILActor::ASSIGN')) {
+        if (!is_object($ticket) || !method_exists($ticket, 'getGroups') || !defined('CommonITILActor::ASSIGN')) {
             return null;
         }
         if (method_exists($ticket, 'loadActors')) {
@@ -59,9 +68,13 @@ final class ActorInputParser
         return $groups;
     }
 
+    /**
+     * @param object $ticket
+     * @return array<int,array<string,mixed>>|null
+     */
     private function existingAssignUsers($ticket): ?array
     {
-        if (!method_exists($ticket, 'getUsers') || !defined('CommonITILActor::ASSIGN')) {
+        if (!is_object($ticket) || !method_exists($ticket, 'getUsers') || !defined('CommonITILActor::ASSIGN')) {
             return null;
         }
         try {
@@ -82,6 +95,12 @@ final class ActorInputParser
         }
     }
 
+    /**
+     * @param array<string,mixed>            $input
+     * @param array<int,array<string,mixed>> $existing
+     * @param array<int,array<string,mixed>> $existingUsers
+     * @return array<string,mixed>
+     */
     private function parseActors(array $input, array $existing, array $existingUsers): array
     {
         if (!is_array($input['_actors']) || !array_key_exists('assign', $input['_actors']) || !is_array($input['_actors']['assign'])) {
@@ -125,6 +144,11 @@ final class ActorInputParser
         return $delta;
     }
 
+    /**
+     * @param array<string,mixed>            $input
+     * @param array<int,array<string,mixed>> $existing
+     * @return array<string,mixed>
+     */
     private function parseLegacyGroups(array $input, array $existing): array
     {
         $value = $input['_groups_id_assign'];
@@ -148,6 +172,12 @@ final class ActorInputParser
         return $this->makeDelta('legacy', $existing, array_keys($groups), $input);
     }
 
+    /**
+     * @param array<int,array<string,mixed>> $existing
+     * @param array<int,int>                 $inputGroups
+     * @param array<string,mixed>            $input
+     * @return array<string,mixed>
+     */
     private function makeDelta(string $format, array $existing, array $inputGroups, array $input): array
     {
         $existingIds = array_keys($existing);

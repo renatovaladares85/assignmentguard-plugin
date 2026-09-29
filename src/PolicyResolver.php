@@ -4,6 +4,11 @@ namespace GlpiPlugin\Assignmentguard;
 
 final class PolicyResolver
 {
+    /**
+     * @param array<string,mixed>      $input
+     * @param array<string,mixed>|null $delta
+     * @return array<string,mixed>
+     */
     public function resolve(array $input, ?array $delta = null): array
     {
         $active = [
@@ -42,7 +47,7 @@ final class PolicyResolver
         if (!$providers) {
             return AssignmentDecision::standalone(
                 $delta,
-                $config['standalone_group_replacement'] === '1'
+                $config['standalone_group_replacement'] === '1',
             );
         }
 

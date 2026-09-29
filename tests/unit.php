@@ -18,9 +18,7 @@ class Ticket
         return $this->new;
     }
 
-    public function loadActors()
-    {
-    }
+    public function loadActors() {}
 
     public function getGroups($type)
     {
@@ -36,15 +34,20 @@ class Ticket
 class Config
 {
     public static $values = [];
-    public static function getConfigurationValues($context, $names = []) {
+    public static function getConfigurationValues($context, $names = [])
+    {
         $values = self::$values[$context] ?? [];
         return $names ? array_intersect_key($values, array_flip($names)) : $values;
     }
-    public static function setConfigurationValues($context, $values = []) {
+    public static function setConfigurationValues($context, $values = [])
+    {
         self::$values[$context] = array_merge(self::$values[$context] ?? [], $values);
     }
-    public static function deleteConfigurationValues($context, $values = []) {
-        foreach ($values as $value) { unset(self::$values[$context][$value]); }
+    public static function deleteConfigurationValues($context, $values = [])
+    {
+        foreach ($values as $value) {
+            unset(self::$values[$context][$value]);
+        }
     }
 }
 
@@ -54,9 +57,19 @@ class Plugin
     public static $info = [];
     public static $installed = [];
     public static $getInfoCalls = 0;
-    public static function isPluginActive($name) { return !empty(self::$active[$name]); }
-    public static function getInfo($name, $key = null) { self::$getInfoCalls++; return self::$info[$name][$key] ?? null; }
-    public function isInstalled($name) { return !empty(self::$installed[$name]); }
+    public static function isPluginActive($name)
+    {
+        return !empty(self::$active[$name]);
+    }
+    public static function getInfo($name, $key = null)
+    {
+        self::$getInfoCalls++;
+        return self::$info[$name][$key] ?? null;
+    }
+    public function isInstalled($name)
+    {
+        return !empty(self::$installed[$name]);
+    }
 }
 
 class PluginBehaviorsConfig
@@ -65,13 +78,19 @@ class PluginBehaviorsConfig
     public static $getInstanceCalls = 0;
     public static $throwOnGetInstance = false;
     public static $throwOnGetField = false;
-    public static function getInstance() {
+    public static function getInstance()
+    {
         self::$getInstanceCalls++;
-        if (self::$throwOnGetInstance) { throw new RuntimeException('simulated config access failure'); }
+        if (self::$throwOnGetInstance) {
+            throw new RuntimeException('simulated config access failure');
+        }
         return new self();
     }
-    public function getField($name) {
-        if (self::$throwOnGetField) { throw new RuntimeException('simulated config read failure'); }
+    public function getField($name)
+    {
+        if (self::$throwOnGetField) {
+            throw new RuntimeException('simulated config read failure');
+        }
         return self::$mode;
     }
 }
@@ -79,7 +98,10 @@ class PluginBehaviorsConfig
 class Toolbox
 {
     public static $lines = [];
-    public static function logInFile($name, $line, $append) { self::$lines[] = [$name, $line, $append]; }
+    public static function logInFile($name, $line, $append)
+    {
+        self::$lines[] = [$name, $line, $append];
+    }
 }
 
 require_once dirname(__DIR__) . '/src/autoload.php';
@@ -559,12 +581,18 @@ expect($resolverInput === $resolverInputBefore, 'Standalone resolver must not mu
 
 class ThrowingTicket extends Ticket
 {
-    public function getGroups($type) { throw new RuntimeException('simulated parser failure'); }
+    public function getGroups($type)
+    {
+        throw new RuntimeException('simulated parser failure');
+    }
 }
 
 class UnreadableUsersTicket extends Ticket
 {
-    public function getUsers($type) { throw new RuntimeException('simulated users failure'); }
+    public function getUsers($type)
+    {
+        throw new RuntimeException('simulated users failure');
+    }
 }
 $ticket = new UnreadableUsersTicket();
 $ticket->fields = ['id' => 98];
@@ -585,7 +613,9 @@ expect($ticket->input === $before, 'Fail-open must restore the original input');
 expect(count($events) === $eventsBefore + 1, 'Fail-open must write exactly one decision');
 expect(end($events)['decision'] === 'ERROR_INTERNAL', 'Fail-open decision');
 
-DecisionLogger::setWriterForTests(static function () { throw new RuntimeException('simulated log failure'); });
+DecisionLogger::setWriterForTests(static function () {
+    throw new RuntimeException('simulated log failure');
+});
 $ticket = new ThrowingTicket();
 $ticket->fields = ['id' => 100];
 $ticket->input = ['_actors' => ['assign' => [$actorA, $actorB]]];
@@ -650,7 +680,7 @@ $pluginRoot = dirname(__DIR__);
 $productionSources = [];
 $excludedSourceDirectories = ['.git', 'tests', 'vendor'];
 $sourceIterator = new RecursiveIteratorIterator(
-    new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS)
+    new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS),
 );
 foreach ($sourceIterator as $sourceFile) {
     if (!$sourceFile->isFile() || $sourceFile->getExtension() !== 'php') {

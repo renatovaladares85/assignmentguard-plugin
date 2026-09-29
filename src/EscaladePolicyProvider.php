@@ -6,6 +6,11 @@ final class EscaladePolicyProvider
 {
     private const SUPPORTED_VERSIONS = ['2.9.18', '2.9.19', '2.9.20', '2.9.21', '2.9.22'];
 
+    /**
+     * @param array<string,mixed>      $input
+     * @param array<string,mixed>|null $delta
+     * @return array<string,mixed>
+     */
     public function resolve(array $input, ?array $delta = null): array
     {
         if (!in_array($this->version(), self::SUPPORTED_VERSIONS, true)) {
@@ -15,10 +20,11 @@ final class EscaladePolicyProvider
         if (!is_array($config) || !array_key_exists('remove_group', $config)) {
             return ['policy' => 'UNKNOWN', 'source' => 'escalade'];
         }
-        if ((string) $config['remove_group'] === '0') {
+        $removeGroup = $this->stringValue($config['remove_group']);
+        if ($removeGroup === '0') {
             return ['policy' => 'ALLOW_MULTIPLE', 'source' => 'escalade'];
         }
-        if ((string) $config['remove_group'] !== '1') {
+        if ($removeGroup !== '1') {
             return ['policy' => 'UNKNOWN', 'source' => 'escalade'];
         }
         if (!$this->hasValidCouplingConfig($config)) {
@@ -30,6 +36,7 @@ final class EscaladePolicyProvider
         return ['policy' => 'REPLACE', 'source' => 'escalade'];
     }
 
+    /** @param array<string,mixed> $config */
     private function hasValidCouplingConfig(array $config): bool
     {
         foreach ([
@@ -40,13 +47,13 @@ final class EscaladePolicyProvider
             'reassign_tech_from_cat',
             'solve_return_group',
         ] as $key) {
-            if (!array_key_exists($key, $config) || !in_array((string) $config[$key], ['0', '1'], true)) {
+            if (!array_key_exists($key, $config) || !in_array($this->stringValue($config[$key]), ['0', '1'], true)) {
                 return false;
             }
         }
 
         if (!array_key_exists('use_assign_user_group', $config)
-            || !in_array((string) $config['use_assign_user_group'], ['0', '1', '2'], true)) {
+            || !in_array($this->stringValue($config['use_assign_user_group']), ['0', '1', '2'], true)) {
             return false;
         }
 
@@ -54,10 +61,15 @@ final class EscaladePolicyProvider
             return false;
         }
 
-        $status = (string) $config['ticket_last_status'];
-        return $status === '-1' || ctype_digit($status);
+        $status = $this->stringValue($config['ticket_last_status']);
+        return $status !== null && ($status === '-1' || ctype_digit($status));
     }
 
+    /**
+     * @param array<string,mixed>      $config
+     * @param array<string,mixed>      $input
+     * @param array<string,mixed>|null $delta
+     */
     private function hasCoupledEffect(array $config, array $input, ?array $delta): bool
     {
         foreach (['remove_tech', 'remove_requester'] as $key) {
@@ -65,7 +77,7 @@ final class EscaladePolicyProvider
                 return true;
             }
         }
-        if (!array_key_exists('ticket_last_status', $config) || (int) $config['ticket_last_status'] !== -1) {
+        if (!array_key_exists('ticket_last_status', $config) || $this->stringValue($config['ticket_last_status']) !== '-1') {
             return true;
         }
         if (!empty($config['use_assign_user_group']) && !empty($config['use_assign_user_group_modification'])
@@ -82,13 +94,18 @@ final class EscaladePolicyProvider
         return false;
     }
 
+    /**
+     * @param array<string,mixed>      $input
+     * @param array<string,mixed>|null $delta
+     */
     private function changesAssignUsers(array $input, ?array $delta): bool
     {
         if ($delta !== null && array_key_exists('assign_users_changed', $delta)) {
             return !empty($delta['assign_users_changed']);
         }
-        if (isset($input['_actors']['assign']) && is_array($input['_actors']['assign'])) {
-            foreach ($input['_actors']['assign'] as $actor) {
+        $actors = $input['_actors'] ?? null;
+        if (is_array($actors) && isset($actors['assign']) && is_array($actors['assign'])) {
+            foreach ($actors['assign'] as $actor) {
                 if (is_array($actor) && ($actor['itemtype'] ?? null) === 'User') {
                     return true;
                 }
@@ -106,5 +123,11 @@ final class EscaladePolicyProvider
         } catch (\Throwable $exception) {
             return null;
         }
+    }
+
+    /** @param mixed $value */
+    private function stringValue($value): ?string
+    {
+        return is_int($value) || is_string($value) ? (string) $value : null;
     }
 }

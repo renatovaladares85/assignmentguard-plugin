@@ -14,6 +14,7 @@ function plugin_assignmentguard_uninstall(): bool
     return true;
 }
 
+/** @param mixed $item */
 function plugin_assignmentguard_pre_item_update($item): void
 {
     \GlpiPlugin\Assignmentguard\AssignmentGuardHookHandler::handle($item);

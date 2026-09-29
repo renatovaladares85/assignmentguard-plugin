@@ -5,8 +5,8 @@
     "php": ">=7.4"
   },
   "require-dev": {
-    "glpi-project/tools": "^0.8",
-    "phpunit/phpunit": "^9.6"
+    "friendsofphp/php-cs-fixer": "^3.13",
+    "phpstan/phpstan": "^1.10"
   },
   "autoload": {
     "psr-4": {
@@ -22,6 +22,8 @@
   },
   "scripts": {
     "test": "php tests/unit.php",
-    "lint": "find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l"
+    "lint": "find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "cs": "php-cs-fixer fix --dry-run --diff",
+    "stan": "phpstan analyse --no-progress --memory-limit=512M"
   }
 }

@@ -13,6 +13,7 @@ final class PluginConfig
         'diagnostic_logging' => '0',
     ];
 
+    /** @return array<string,mixed> */
     public static function getAll(): array
     {
         $stored = \Config::getConfigurationValues(self::CONTEXT, array_keys(self::DEFAULTS));
@@ -22,9 +23,11 @@ final class PluginConfig
     public static function getBool(string $name): bool
     {
         $values = self::getAll();
-        return isset($values[$name]) && (string) $values[$name] === '1';
+        $value = $values[$name] ?? null;
+        return (is_int($value) || is_string($value)) && (string) $value === '1';
     }
 
+    /** @param array<string,mixed> $values */
     public static function save(array $values): void
     {
         $allowed = [];
