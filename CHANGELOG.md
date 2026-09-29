@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-09-29
 
-Primeira versão pública candidata. Ainda não há tag, pacote ou release publicado.
+Primeira versão pública.
 
 - MVP preventivo para substituição inequívoca de grupo responsável antes das regras nativas do Ticket.
 - Política standalone e providers declarativos para Behaviors 2.7.8 e Escalade 2.9.18–2.9.22.

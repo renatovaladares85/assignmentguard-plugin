@@ -12,9 +12,9 @@
 
 Esses valores são refletidos em `LICENSE`, `setup.php`, `plugin.xml`, `composer.json`, README e CHANGELOG. Não há logo a criar ou empacotar nesta primeira release.
 
-## Pendências antes da publicação
+## Auditoria de publicação da 0.1.0
 
-- criar a tag e a release somente quando houver autorização explícita;
-- gerar e validar uma instalação limpa a partir do pacote de release candidate;
-- validar upgrade quando houver uma versão pública anterior; para `0.1.0`, registrar N/A com a justificativa da primeira release;
-- confirmar os artefatos finais de publicação, sem incluir `.git`, caches, logs ou `vendor` desnecessário.
+- tag e GitHub Release autorizadas na Issue #24, condicionadas aos gates verdes;
+- instalação limpa, ativação/configuração, smoke, desativação/reativação e uninstall validados na Issue #23/PR #41;
+- upgrade: N/A para a primeira versão pública `0.1.0`;
+- artefato final deve ser gerado de forma reproduzível, validado e publicado sem `.git`, caches, logs ou `vendor` desnecessário.

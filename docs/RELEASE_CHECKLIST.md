@@ -2,28 +2,28 @@
 
 ## Código
 
-- [ ] Sem mudanças em core/terceiros.
-- [ ] PHP 7.4 lint.
-- [ ] Coding standards.
-- [ ] PHPStan/análise estática compatível.
-- [ ] Testes unitários.
-- [ ] Testes funcionais.
-- [ ] Matriz GLPI 10.0.20–10.0.26.
-- [ ] Teste MySQL.
-- [ ] Teste MariaDB.
+- [x] Sem mudanças em core/terceiros.
+- [x] PHP 7.4 lint.
+- [x] Coding standards.
+- [x] PHPStan/análise estática compatível.
+- [x] Testes unitários.
+- [x] Testes funcionais.
+- [x] Matriz GLPI 10.0.20–10.0.26.
+- [x] Teste MySQL.
+- [x] Teste MariaDB.
 
 ## Plugin GLPI
 
-- [ ] Diretório `assignmentguard`.
-- [ ] `setup.php`.
-- [ ] `hook.php`.
-- [ ] `csrf_compliant`.
-- [ ] requirements GLPI min/max corretos.
-- [ ] `/src` PSR-4.
-- [ ] configuração sem tabela própria.
-- [ ] página de configuração.
+- [x] Diretório `assignmentguard`.
+- [x] `setup.php`.
+- [x] `hook.php`.
+- [x] `csrf_compliant`.
+- [x] requirements GLPI min/max corretos.
+- [x] `/src` PSR-4.
+- [x] configuração sem tabela própria.
+- [x] página de configuração.
 - [x] traduções preparadas (`pt_BR` via gettext).
-- [ ] logging em `files/_log/assignmentguard.log`.
+- [x] logging em `files/_log/assignmentguard.log`.
 
 ## Documentação
 
@@ -38,13 +38,13 @@
 ## Empacotamento/publicação
 
 - [x] `plugin.xml` consistente com a versão e os metadados públicos.
-- [ ] nome/diretório corretos.
+- [x] nome/diretório corretos.
 - [x] arquivo de licença definido (`GPL-3.0-or-later`).
 - [x] autor definido (Renato Valadares).
 - [x] homepage/repositório definido.
-- [ ] pacote não contém `.git`, caches, logs, vendor desnecessário ou arquivos locais.
-- [ ] instalação limpa testada a partir do pacote.
-- [ ] upgrade da versão anterior, quando aplicável.
-- [ ] desinstalação testada.
+- [x] pacote não contém `.git`, caches, logs, vendor desnecessário ou arquivos locais.
+- [x] instalação limpa testada a partir do pacote.
+- [x] upgrade da versão anterior: N/A, primeira versão pública `0.1.0`.
+- [x] desinstalação testada.
 
-O procedimento do release candidate, incluindo nome, tamanho, hash e ciclo de validação, está em `docs/RELEASE_CANDIDATE.md`. Os itens acima só são marcados após a evidência do candidate e da CI correspondente.
+Auditoria final de `0.1.0`: CI pós-merge `36607599278` aprovada em `main@2935d2ca92ce43d76d3b42c5b1602c122b84bd24`. O procedimento do release candidate, incluindo nome, tamanho, hash e ciclo de validação, está em `docs/RELEASE_CANDIDATE.md`.
