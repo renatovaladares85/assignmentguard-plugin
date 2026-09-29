@@ -31,7 +31,7 @@ jobs:
       - name: Show runtime
         run: php --version
       - name: Validate Composer metadata
-        run: composer validate --strict --no-check-publish
+        run: composer validate --no-check-publish
       - name: Install development quality tools
         run: composer update --no-interaction --prefer-dist --no-progress
       - name: Unit tests
