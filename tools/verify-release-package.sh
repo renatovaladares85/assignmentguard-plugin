@@ -15,7 +15,8 @@ for required in setup.php hook.php plugin.xml src/autoload.php locales/pt_BR.mo;
     [[ -f "$package_root/$required" ]] || { echo "Missing package file: $required" >&2; exit 1; }
 done
 
-php -r "require '$package_root/setup.php'; if (PLUGIN_ASSIGNMENTGUARD_VERSION !== '0.1.0') { exit(1); }"
+version=$(sed -n "s/^define('PLUGIN_ASSIGNMENTGUARD_VERSION', '\([^']*\)');$/\1/p" "$package_root/setup.php")
+[[ "$version" == '0.1.0' ]] || { echo 'Unexpected package version.' >&2; exit 1; }
 php -r "\$xml = simplexml_load_file('$package_root/plugin.xml'); if (!\$xml || (string) \$xml->key !== 'assignmentguard') { exit(1); }"
 find "$package_root" -name '*.php' -type f -print0 | xargs -0 -n1 php -l >/dev/null
 printf 'PACKAGE_VERIFIED=%s\n' "$archive_path"
