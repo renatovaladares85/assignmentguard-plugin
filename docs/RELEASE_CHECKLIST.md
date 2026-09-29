@@ -46,3 +46,5 @@
 - [ ] instalação limpa testada a partir do pacote.
 - [ ] upgrade da versão anterior, quando aplicável.
 - [ ] desinstalação testada.
+
+O procedimento do release candidate, incluindo nome, tamanho, hash e ciclo de validação, está em `docs/RELEASE_CANDIDATE.md`. Os itens acima só são marcados após a evidência do candidate e da CI correspondente.

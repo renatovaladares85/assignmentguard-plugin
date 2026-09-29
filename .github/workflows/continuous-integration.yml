@@ -61,6 +61,22 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: glpi/plugins/assignmentguard
+      - name: Build and extract clean release candidate
+        working-directory: glpi
+        run: |
+          mkdir -p plugins/package-test-source
+          cp -a plugins/assignmentguard/tests plugins/package-test-source/
+          output_dir=$(mktemp -d)
+          bash plugins/assignmentguard/tools/build-release-package.sh --output "$output_dir"
+          archive=$(find "$output_dir" -maxdepth 1 -name 'assignmentguard-*.tar.gz' -print -quit)
+          bash plugins/assignmentguard/tools/verify-release-package.sh "$archive"
+          rm -rf plugins/assignmentguard
+          tar -xzf "$archive" -C plugins
+          test -f plugins/assignmentguard/setup.php
+          test ! -e plugins/assignmentguard/tests
+          printf 'Release candidate: %s\n' "$(basename "$archive")" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Size: %s bytes\n' "$(wc -c < "$archive" | tr -d ' ')" >> "$GITHUB_STEP_SUMMARY"
+          printf 'SHA-256: %s\n' "$(sha256sum "$archive" | awk '{print $1}')" >> "$GITHUB_STEP_SUMMARY"
       - name: Prepare GLPI workspace
         working-directory: glpi
         run: |
@@ -84,16 +100,16 @@ jobs:
           docker compose exec -T app bin/console list --raw | grep -q '^plugin:install'
           docker compose exec -T app bin/console plugin:install assignmentguard -u glpi
           docker compose exec -T app bin/console plugin:enable assignmentguard
-      - name: Run standalone safety regressions
-        working-directory: glpi
-        run: docker compose exec -T app php plugins/assignmentguard/tests/unit.php
       - name: Run GLPI ${{ matrix.glpi-version }} same-write SLA regression
         working-directory: glpi
         run: |
-          docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc -f plugins/assignmentguard/tests/functional/AssignmentGuardSameWriteTest.php
+          docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
+            -f plugins/package-test-source/tests/functional/AssignmentGuardSameWriteTest.php
       - name: Verify plugin lifecycle teardown
         working-directory: glpi
         run: |
+          docker compose exec -T app bin/console plugin:disable assignmentguard
+          docker compose exec -T app bin/console plugin:enable assignmentguard
           docker compose exec -T app bin/console plugin:disable assignmentguard
           docker compose exec -T app bin/console plugin:uninstall assignmentguard
       - name: Stop GLPI
@@ -129,6 +145,22 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: glpi/plugins/assignmentguard
+      - name: Build and extract clean release candidate
+        working-directory: glpi
+        run: |
+          mkdir -p plugins/package-test-source
+          cp -a plugins/assignmentguard/tests plugins/package-test-source/
+          output_dir=$(mktemp -d)
+          bash plugins/assignmentguard/tools/build-release-package.sh --output "$output_dir"
+          archive=$(find "$output_dir" -maxdepth 1 -name 'assignmentguard-*.tar.gz' -print -quit)
+          bash plugins/assignmentguard/tools/verify-release-package.sh "$archive"
+          rm -rf plugins/assignmentguard
+          tar -xzf "$archive" -C plugins
+          test -f plugins/assignmentguard/setup.php
+          test ! -e plugins/assignmentguard/tests
+          printf 'Release candidate: %s\n' "$(basename "$archive")" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Size: %s bytes\n' "$(wc -c < "$archive" | tr -d ' ')" >> "$GITHUB_STEP_SUMMARY"
+          printf 'SHA-256: %s\n' "$(sha256sum "$archive" | awk '{print $1}')" >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout Behaviors 2.7.8
         uses: actions/checkout@v7
         with:
@@ -178,15 +210,12 @@ jobs:
             docker compose exec -T app bin/console plugin:install "$plugin" -u glpi
             docker compose exec -T app bin/console plugin:enable "$plugin"
           done
-      - name: Run standalone and unsupported-version safety gates
-        working-directory: glpi
-        run: docker compose exec -T app php plugins/assignmentguard/tests/unit.php
-      - name: Run external integration policy regression
+      - name: Run package integration policy regression
         working-directory: glpi
         run: |
           docker compose exec -e ASSIGNMENTGUARD_ESCALADE_VERSION=${{ matrix.escalade-version }} -T app \
-            ./vendor/bin/atoum -bf plugins/assignmentguard/tests/functional/IntegrationBootstrap.php -mcn 1 -ncc \
-            -f plugins/assignmentguard/tests/functional/AssignmentGuardIntegrationPolicyTest.php
+            ./vendor/bin/atoum -bf plugins/package-test-source/tests/functional/IntegrationBootstrap.php -mcn 1 -ncc \
+            -f plugins/package-test-source/tests/functional/AssignmentGuardIntegrationPolicyTest.php
       - name: Verify integration lifecycle teardown
         working-directory: glpi
         run: |

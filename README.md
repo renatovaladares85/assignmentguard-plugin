@@ -28,6 +28,17 @@ git clone -b <branch> https://github.com/renatovaladares85/assignmentguard-plugi
 
 Confirme que o arquivo está em `<GLPI>/plugins/assignmentguard/setup.php` antes de instalar e ativar pelo GLPI. Em **Configuração > Plugins > Assignment Guard**, habilite somente as integrações que devem ser consultadas como fonte de política. Sem Behaviors/Escalade ativos, a política standalone vem habilitada por padrão.
 
+Para um release candidate local, gere o pacote em um diretório temporário e extraia-o diretamente em `<GLPI>/plugins`. O arquivo já contém a raiz técnica `assignmentguard/` e não deve ser extraído dentro de outro diretório com esse nome:
+
+```bash
+output_dir=$(mktemp -d)
+bash tools/build-release-package.sh --output "$output_dir"
+bash tools/verify-release-package.sh "$output_dir"/assignmentguard-0.1.0-rc.1.tar.gz
+tar -xzf "$output_dir"/assignmentguard-0.1.0-rc.1.tar.gz -C <GLPI>/plugins
+```
+
+O procedimento, a lista de conteúdo e os campos de integridade do artefato estão em [docs/RELEASE_CANDIDATE.md](docs/RELEASE_CANDIDATE.md). O pacote não constitui uma tag, release ou publicação.
+
 Cada atualização de Ticket observada gera uma linha JSON em `files/_log/assignmentguard.log`, com IDs e código de decisão, sem dados de conteúdo ou identificação pessoal.
 
 ## Comportamento standalone
