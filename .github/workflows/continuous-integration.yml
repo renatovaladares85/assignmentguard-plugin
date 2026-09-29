@@ -43,6 +43,27 @@ jobs:
       - name: Static analysis
         run: composer run stan
 
+  release-package:
+    name: Release package reproducibility
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/glpi-project/githubactions-glpi-apache:php-7.4-glpi-10.0.x
+      options: --user github-actions-runner
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Build identical release candidates
+        run: |
+          first_output_dir=$(mktemp -d)
+          second_output_dir=$(mktemp -d)
+          bash tools/build-release-package.sh --output "$first_output_dir"
+          bash tools/build-release-package.sh --output "$second_output_dir"
+          first_archive="$first_output_dir/assignmentguard-0.1.0-rc.1.tar.gz"
+          second_archive="$second_output_dir/assignmentguard-0.1.0-rc.1.tar.gz"
+          cmp --silent "$first_archive" "$second_archive"
+          bash tools/verify-release-package.sh "$first_archive"
+          bash tools/verify-release-package.sh "$second_archive"
+
   lifecycle-glpi-10:
     name: GLPI ${{ matrix.glpi-version }} lifecycle and regression
     strategy:
