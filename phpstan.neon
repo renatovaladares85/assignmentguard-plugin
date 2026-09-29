@@ -1,5 +1,7 @@
 parameters:
     level: max
+    scanFiles:
+        - tests/phpstan-glpi-stubs.php
     paths:
         - src
         - hook.php

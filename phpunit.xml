@@ -1,7 +1,0 @@
-<phpunit colors="true" bootstrap="tests/bootstrap.php">
-    <testsuites>
-        <testsuite name="Assignment Guard">
-            <directory suffix="Test.php">tests</directory>
-        </testsuite>
-    </testsuites>
-</phpunit>
