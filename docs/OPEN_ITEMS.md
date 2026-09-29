@@ -15,6 +15,6 @@ Esses valores são refletidos em `LICENSE`, `setup.php`, `plugin.xml`, `composer
 ## Pendências antes da publicação
 
 - criar a tag e a release somente quando houver autorização explícita;
-- gerar e validar uma instalação limpa a partir do pacote de release;
-- validar upgrade quando houver uma versão pública anterior;
+- gerar e validar uma instalação limpa a partir do pacote de release candidate;
+- validar upgrade quando houver uma versão pública anterior; para `0.1.0`, registrar N/A com a justificativa da primeira release;
 - confirmar os artefatos finais de publicação, sem incluir `.git`, caches, logs ou `vendor` desnecessário.
