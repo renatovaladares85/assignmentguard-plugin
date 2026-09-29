@@ -5,7 +5,17 @@
   <description>
     <short><en>Preventive ticket assignment compatibility guard.</en></short>
   </description>
+  <homepage>https://github.com/renatovaladares85/assignmentguard-plugin</homepage>
+  <issues>https://github.com/renatovaladares85/assignmentguard-plugin/issues</issues>
+  <readme>https://github.com/renatovaladares85/assignmentguard-plugin/blob/main/README.md</readme>
+  <authors>
+    <author>Renato Valadares</author>
+  </authors>
   <versions>
     <version><num>0.1.0</num><compatibility>10.0</compatibility></version>
   </versions>
+  <langs>
+    <lang>pt_BR</lang>
+  </langs>
+  <license>GPL-3.0-or-later</license>
 </root>

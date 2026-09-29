@@ -1,27 +1,20 @@
-# Itens que ainda exigem decisão do proprietário
+# Itens de publicação e decisões do proprietário
 
-Estes itens **não bloqueiam o desenvolvimento do MVP**, mas bloqueiam publicação pública final se permanecerem indefinidos.
+## Decisões resolvidas em 2026-09-29
 
-## Licença
+| Item | Decisão |
+|---|---|
+| Licença | `GPL-3.0-or-later` |
+| Autor público | Renato Valadares |
+| Homepage/repositório | https://github.com/renatovaladares85/assignmentguard-plugin |
+| Primeira versão pública | `0.1.0` |
+| Logo | não usar na primeira release |
 
-Não foi definida.
+Esses valores são refletidos em `LICENSE`, `setup.php`, `plugin.xml`, `composer.json`, README e CHANGELOG. Não há logo a criar ou empacotar nesta primeira release.
 
-Não inventar nem escolher automaticamente MIT/GPL/AGPL.
+## Pendências antes da publicação
 
-## Autor/organização
-
-Não foi definido o valor público de `author`.
-
-## Homepage/repositório público
-
-Não foi definido o destino público final.
-
-## Logo
-
-Opcional para desenvolvimento; necessário se a publicação exigir identidade visual.
-
-## Versão de primeira release
-
-Sugestão técnica para desenvolvimento: `0.1.0`.
-
-A versão pública final deve ser confirmada antes do pacote de release.
+- criar a tag e a release somente quando houver autorização explícita;
+- gerar e validar uma instalação limpa a partir do pacote de release;
+- validar upgrade quando houver uma versão pública anterior;
+- confirmar os artefatos finais de publicação, sem incluir `.git`, caches, logs ou `vendor` desnecessário.

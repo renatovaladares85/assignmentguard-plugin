@@ -164,7 +164,9 @@ $version = plugin_version_assignmentguard();
 expect($version['requirements']['glpi']['min'] === '10.0.20', 'P1 GLPI minimum');
 expect($version['requirements']['glpi']['max'] === '10.0.27', 'P1 GLPI exclusive maximum');
 expect(!isset($version['requirements']['database']), 'P1 must not require a database version');
-expect($version['author'] === '' && $version['license'] === '' && $version['homepage'] === '', 'P1 public metadata remains undecided');
+expect($version['author'] === 'Renato Valadares', 'P10 public author');
+expect($version['license'] === 'GPL-3.0-or-later', 'P10 SPDX license');
+expect($version['homepage'] === 'https://github.com/renatovaladares85/assignmentguard-plugin', 'P10 public homepage');
 expect(plugin_assignmentguard_check_prerequisites(), 'P1 prerequisites');
 expect(plugin_assignmentguard_check_config(), 'P1 configuration check');
 

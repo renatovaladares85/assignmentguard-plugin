@@ -22,26 +22,26 @@
 - [ ] `/src` PSR-4.
 - [ ] configuração sem tabela própria.
 - [ ] página de configuração.
-- [ ] traduções preparadas.
+- [x] traduções preparadas (`pt_BR` via gettext).
 - [ ] logging em `files/_log/assignmentguard.log`.
 
 ## Documentação
 
-- [ ] README com objetivo/instalação/configuração.
-- [ ] matriz de compatibilidade.
-- [ ] comportamento standalone.
-- [ ] regras Behaviors/Escalade.
-- [ ] códigos de decisão/log.
-- [ ] troubleshooting.
-- [ ] CHANGELOG.
+- [x] README com objetivo/instalação/configuração.
+- [x] matriz de compatibilidade.
+- [x] comportamento standalone.
+- [x] regras Behaviors/Escalade.
+- [x] códigos de decisão/log.
+- [x] troubleshooting.
+- [x] CHANGELOG.
 
 ## Empacotamento/publicação
 
-- [ ] `plugin.xml` consistente com a versão.
+- [x] `plugin.xml` consistente com a versão e os metadados públicos.
 - [ ] nome/diretório corretos.
-- [ ] arquivo de licença definido.
-- [ ] autor definido.
-- [ ] homepage/repositório definido.
+- [x] arquivo de licença definido (`GPL-3.0-or-later`).
+- [x] autor definido (Renato Valadares).
+- [x] homepage/repositório definido.
 - [ ] pacote não contém `.git`, caches, logs, vendor desnecessário ou arquivos locais.
 - [ ] instalação limpa testada a partir do pacote.
 - [ ] upgrade da versão anterior, quando aplicável.
