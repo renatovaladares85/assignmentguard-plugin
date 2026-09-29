@@ -64,7 +64,8 @@ jobs:
       - name: Build and extract clean release candidate
         working-directory: glpi
         run: |
-          cp -a plugins/assignmentguard package-test-source
+          mkdir -p plugins/package-test-source
+          cp -a plugins/assignmentguard/tests plugins/package-test-source/
           output_dir=$(mktemp -d)
           bash plugins/assignmentguard/tools/build-release-package.sh --output "$output_dir"
           archive=$(find "$output_dir" -maxdepth 1 -name 'assignmentguard-*.tar.gz' -print -quit)
@@ -103,7 +104,7 @@ jobs:
         working-directory: glpi
         run: |
           docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
-            -f package-test-source/tests/functional/AssignmentGuardSameWriteTest.php
+            -f plugins/package-test-source/tests/functional/AssignmentGuardSameWriteTest.php
       - name: Verify plugin lifecycle teardown
         working-directory: glpi
         run: |
@@ -147,7 +148,8 @@ jobs:
       - name: Build and extract clean release candidate
         working-directory: glpi
         run: |
-          cp -a plugins/assignmentguard package-test-source
+          mkdir -p plugins/package-test-source
+          cp -a plugins/assignmentguard/tests plugins/package-test-source/
           output_dir=$(mktemp -d)
           bash plugins/assignmentguard/tools/build-release-package.sh --output "$output_dir"
           archive=$(find "$output_dir" -maxdepth 1 -name 'assignmentguard-*.tar.gz' -print -quit)
@@ -212,8 +214,8 @@ jobs:
         working-directory: glpi
         run: |
           docker compose exec -e ASSIGNMENTGUARD_ESCALADE_VERSION=${{ matrix.escalade-version }} -T app \
-            ./vendor/bin/atoum -bf package-test-source/tests/functional/IntegrationBootstrap.php -mcn 1 -ncc \
-            -f package-test-source/tests/functional/AssignmentGuardIntegrationPolicyTest.php
+            ./vendor/bin/atoum -bf plugins/package-test-source/tests/functional/IntegrationBootstrap.php -mcn 1 -ncc \
+            -f plugins/package-test-source/tests/functional/AssignmentGuardIntegrationPolicyTest.php
       - name: Verify integration lifecycle teardown
         working-directory: glpi
         run: |
