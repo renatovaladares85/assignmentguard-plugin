@@ -1,6 +1,14 @@
 {
   "name": "glpi-plugin/assignmentguard",
   "description": "Preventive group-assignment compatibility guard for GLPI 10.",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/renatovaladares85/assignmentguard-plugin",
+  "authors": [
+    {
+      "name": "Renato Valadares",
+      "homepage": "https://github.com/renatovaladares85/assignmentguard-plugin"
+    }
+  ],
   "require": {
     "php": ">=7.4"
   },

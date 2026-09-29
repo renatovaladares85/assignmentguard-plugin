@@ -23,9 +23,9 @@ function plugin_version_assignmentguard(): array
     return [
         'name'         => 'Assignment Guard',
         'version'      => PLUGIN_ASSIGNMENTGUARD_VERSION,
-        'author'       => '',
-        'license'      => '',
-        'homepage'     => '',
+        'author'       => 'Renato Valadares',
+        'license'      => 'GPL-3.0-or-later',
+        'homepage'     => 'https://github.com/renatovaladares85/assignmentguard-plugin',
         'requirements' => [
             'glpi' => [
                 'min' => PLUGIN_ASSIGNMENTGUARD_MIN_GLPI_VERSION,

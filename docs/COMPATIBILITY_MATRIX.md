@@ -72,3 +72,7 @@ Plugin conhecido ativo + versão fora da matriz => não aplicar standalone no me
 
 Decisão:
 `NOT_ACTED_INTEGRATION_VERSION_UNSUPPORTED`.
+
+## Evidência de CI
+
+A matriz configurada valida GLPI 10.0.20–10.0.26, MySQL 5.7 e MariaDB 10.2. Os gates de qualidade executam em PHP 7.4: metadata Composer, suíte própria, lint, PHP-CS-Fixer e PHPStan. Essa evidência não estende a faixa declarada acima nem homologa versões externas fora das tabelas.
