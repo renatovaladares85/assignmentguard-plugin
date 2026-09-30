@@ -25,4 +25,7 @@ session_name($argv[3]);
 session_id($argv[2]);
 session_start();
 
-require $glpiRoot . '/plugins/assignmentguard/front/config.form.php';
+$configForm = $glpiRoot . '/plugins/assignmentguard/front/config.form.php';
+chdir(dirname($configForm));
+
+require $configForm;

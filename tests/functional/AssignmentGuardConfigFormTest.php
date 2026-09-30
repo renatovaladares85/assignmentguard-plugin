@@ -166,7 +166,7 @@ class Config extends DbTestCase
                 'Configuration form runner failed with exit code %d. Output: %s Error: %s',
                 $request['exit_code'],
                 $request['output'],
-                $request['error']
+                $request['error'],
             ));
         }
     }
