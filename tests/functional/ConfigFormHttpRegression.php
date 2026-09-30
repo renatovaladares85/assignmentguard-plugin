@@ -116,7 +116,7 @@ final class ConfigFormHttpRegression
         $this->assertSame(
             (string) $this->originalConfig[self::CONFIG_KEY],
             $this->readConfigValue(),
-            'cleanup did not restore the original value'
+            'cleanup did not restore the original value',
         );
     }
 
@@ -250,28 +250,6 @@ final class ConfigFormHttpClient
     public function post(string $path, array $fields): array
     {
         return $this->request($path, http_build_query($fields, '', '&'));
-    }
-
-    /** @return array{name:string,value:string} */
-    public function getSessionCookie(): array
-    {
-        $lines = file($this->cookieFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if ($lines === false) {
-            throw new RuntimeException('Unable to read the HTTP cookie jar.');
-        }
-
-        foreach ($lines as $line) {
-            $line = preg_replace('/^#HttpOnly_/', '', $line);
-            $parts = explode("\t", $line);
-            if (count($parts) === 7 && strpos($parts[5], 'glpi_') === 0) {
-                return [
-                    'name' => $parts[5],
-                    'value' => $parts[6],
-                ];
-            }
-        }
-
-        throw new RuntimeException('GLPI session cookie was not created.');
     }
 
     /** @return array{status:int,headers:string,body:string} */
