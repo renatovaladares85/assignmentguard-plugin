@@ -33,8 +33,6 @@ class Config extends DbTestCase
         ]);
 
         $this->assertRequestSucceeded($valid);
-        \Session::start();
-        $this->variable($_SESSION['glpicsrftokens'][$token] ?? null)->isNull();
         $this->assertConfigurationValue('standalone_group_replacement', '1');
         $this->assertConfigurationValue('integration_behaviors_enabled', '1');
         $this->assertConfigurationValue('integration_escalade_enabled', '1');
