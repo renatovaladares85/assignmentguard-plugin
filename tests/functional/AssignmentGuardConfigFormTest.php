@@ -32,7 +32,7 @@ class Config extends DbTestCase
             'diagnostic_logging' => 1,
         ]);
 
-        $this->integer($valid['exit_code'])->isIdenticalTo(0);
+        $this->assertRequestSucceeded($valid);
         \Session::start();
         $this->variable($_SESSION['glpicsrftokens'][$token] ?? null)->isNull();
         $this->assertConfigurationValue('standalone_group_replacement', '1');
@@ -156,5 +156,18 @@ class Config extends DbTestCase
     {
         $config = PluginConfig::getAll();
         $this->string((string) $config[$name])->isIdenticalTo($value);
+    }
+
+    /** @param array{exit_code:int,output:string,error:string} $request */
+    private function assertRequestSucceeded(array $request): void
+    {
+        if ($request['exit_code'] !== 0) {
+            throw new \RuntimeException(sprintf(
+                'Configuration form runner failed with exit code %d. Output: %s Error: %s',
+                $request['exit_code'],
+                $request['output'],
+                $request['error']
+            ));
+        }
     }
 }
