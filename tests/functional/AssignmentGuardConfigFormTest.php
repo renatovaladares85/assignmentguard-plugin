@@ -32,10 +32,10 @@ class Config extends DbTestCase
         ]);
 
         $this->assertRequestSucceeded($valid);
-        $this->assertConfigurationValue('standalone_group_replacement', '1');
-        $this->assertConfigurationValue('integration_behaviors_enabled', '1');
-        $this->assertConfigurationValue('integration_escalade_enabled', '1');
-        $this->assertConfigurationValue('diagnostic_logging', '1');
+        $this->assertConfigurationValue($valid, 'standalone_group_replacement', '1');
+        $this->assertConfigurationValue($valid, 'integration_behaviors_enabled', '1');
+        $this->assertConfigurationValue($valid, 'integration_escalade_enabled', '1');
+        $this->assertConfigurationValue($valid, 'diagnostic_logging', '1');
 
         $this->login();
         PluginConfig::save(['standalone_group_replacement' => 1]);
@@ -45,7 +45,7 @@ class Config extends DbTestCase
         ]);
         $this->integer($missingToken['exit_code'])->isIdenticalTo(0);
         $this->string($missingToken['output'])->contains('The action you have requested is not allowed.');
-        $this->assertConfigurationValue('standalone_group_replacement', '1');
+        $this->assertConfigurationValue($missingToken, 'standalone_group_replacement', '1');
 
         $this->login();
         PluginConfig::save(['standalone_group_replacement' => 1]);
@@ -56,7 +56,7 @@ class Config extends DbTestCase
         ]);
         $this->integer($invalidToken['exit_code'])->isIdenticalTo(0);
         $this->string($invalidToken['output'])->contains('The action you have requested is not allowed.');
-        $this->assertConfigurationValue('standalone_group_replacement', '1');
+        $this->assertConfigurationValue($invalidToken, 'standalone_group_replacement', '1');
 
         $this->login();
         PluginConfig::save(['standalone_group_replacement' => 1]);
@@ -71,7 +71,7 @@ class Config extends DbTestCase
             ]);
             $this->integer($forbidden['exit_code'])->isIdenticalTo(0);
             $this->string($forbidden['output'])->contains('Access denied');
-            $this->assertConfigurationValue('standalone_group_replacement', '1');
+            $this->assertConfigurationValue($forbidden, 'standalone_group_replacement', '1');
         } finally {
             $this->login();
         }
@@ -151,48 +151,22 @@ class Config extends DbTestCase
         ];
     }
 
-    private function assertConfigurationValue(string $name, string $value): void
+    /** @param array{exit_code:int,output:string,error:string} $request */
+    private function assertConfigurationValue(array $request, string $name, string $value): void
     {
-        $config = $this->readConfiguration();
+        $marker = 'ASSIGNMENTGUARD_CONFIG=';
+        $position = strrpos($request['output'], $marker);
+
+        if ($position === false) {
+            throw new \RuntimeException('Configuration form runner did not return its configuration state.');
+        }
+
+        $config = json_decode(substr($request['output'], $position + strlen($marker)), true);
+        if (!is_array($config)) {
+            throw new \RuntimeException('Configuration form runner returned an invalid configuration state.');
+        }
+
         $this->string((string) $config[$name])->isIdenticalTo($value);
-    }
-
-    /** @return array<string,mixed> */
-    private function readConfiguration(): array
-    {
-        $glpiRoot = dirname(__DIR__, 4);
-        $reader = __DIR__ . '/ConfigValueReader.php';
-        $command = implode(' ', array_map('escapeshellarg', [
-            PHP_BINARY,
-            $reader,
-            $glpiRoot,
-        ]));
-        $process = proc_open($command, [
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ], $pipes, $glpiRoot);
-
-        if (!is_resource($process)) {
-            throw new \RuntimeException('Unable to start configuration value reader.');
-        }
-
-        $output = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        $error = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-        $exitCode = proc_close($process);
-        $config = json_decode($output, true);
-
-        if ($exitCode !== 0 || !is_array($config)) {
-            throw new \RuntimeException(sprintf(
-                'Configuration value reader failed with exit code %d. Output: %s Error: %s',
-                $exitCode,
-                $output,
-                $error,
-            ));
-        }
-
-        return $config;
     }
 
     /** @param array{exit_code:int,output:string,error:string} $request */

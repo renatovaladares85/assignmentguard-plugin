@@ -35,6 +35,13 @@ if (($post['_glpi_csrf_token'] ?? null) === '__native__') {
     $_REQUEST['_glpi_csrf_token'] = $post['_glpi_csrf_token'];
 }
 
+register_shutdown_function(static function (): void {
+    $class = '\\GlpiPlugin\\Assignmentguard\\PluginConfig';
+    if (class_exists($class)) {
+        echo "\nASSIGNMENTGUARD_CONFIG=" . json_encode($class::getAll());
+    }
+});
+
 $configForm = $glpiRoot . '/plugins/assignmentguard/front/config.form.php';
 chdir(dirname($configForm));
 
