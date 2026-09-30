@@ -82,10 +82,10 @@ class Config extends DbTestCase
     {
         $this->login();
         $plugin = new \Plugin();
+        $plugin->checkPluginState('assignmentguard');
         $this->boolean($plugin->getFromDBByDir('assignmentguard'))->isTrue();
-        if (!\Plugin::isPluginActive('assignmentguard')) {
-            $this->boolean($plugin->activate($plugin->getID()))->isTrue();
-        }
+        $plugin->install($plugin->getID());
+        $this->boolean($plugin->activate($plugin->getID()))->isTrue();
         $plugin->init(true);
     }
 
