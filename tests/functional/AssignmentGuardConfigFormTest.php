@@ -22,10 +22,9 @@ class Config extends DbTestCase
         ]);
 
         $this->login();
-        $token = \Session::getNewCSRFToken();
         $valid = $this->postConfigForm(session_id(), session_name(), [
             'update' => 1,
-            '_glpi_csrf_token' => $token,
+            '_glpi_csrf_token' => '__native__',
             'standalone_group_replacement' => 1,
             'integration_behaviors_enabled' => 1,
             'integration_escalade_enabled' => 1,
@@ -65,10 +64,9 @@ class Config extends DbTestCase
         try {
             $this->login($limitedUser['name'], $limitedUser['password']);
             $this->boolean(\Session::haveRight('config', UPDATE))->isFalse();
-            $token = \Session::getNewCSRFToken();
             $forbidden = $this->postConfigForm(session_id(), session_name(), [
                 'update' => 1,
-                '_glpi_csrf_token' => $token,
+                '_glpi_csrf_token' => '__native__',
                 'standalone_group_replacement' => 0,
             ]);
             $this->integer($forbidden['exit_code'])->isIdenticalTo(0);

@@ -29,6 +29,12 @@ session_name($argv[3]);
 session_id($argv[2]);
 session_start();
 
+if (($post['_glpi_csrf_token'] ?? null) === '__native__') {
+    $post['_glpi_csrf_token'] = Session::getNewCSRFToken(true);
+    $_POST['_glpi_csrf_token'] = $post['_glpi_csrf_token'];
+    $_REQUEST['_glpi_csrf_token'] = $post['_glpi_csrf_token'];
+}
+
 $configForm = $glpiRoot . '/plugins/assignmentguard/front/config.form.php';
 chdir(dirname($configForm));
 
