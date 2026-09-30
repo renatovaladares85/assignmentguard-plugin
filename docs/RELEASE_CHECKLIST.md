@@ -44,7 +44,7 @@
 - [x] homepage/repositório definido.
 - [x] pacote não contém `.git`, caches, logs, vendor desnecessário ou arquivos locais.
 - [x] instalação limpa testada a partir do pacote.
-- [x] upgrade da versão anterior: N/A, primeira versão pública `0.1.0`.
+- [ ] upgrade `0.1.0` -> `0.1.1` validado no banco normal, incluindo preservação da configuração, HTTP/CSRF e same-write/SLA.
 - [x] desinstalação testada.
 
 Auditoria final de `0.1.0`: CI pós-merge `36607599278` aprovada em `main@2935d2ca92ce43d76d3b42c5b1602c122b84bd24`. O procedimento do release candidate, incluindo nome, tamanho, hash e ciclo de validação, está em `docs/RELEASE_CANDIDATE.md`.

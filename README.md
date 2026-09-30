@@ -13,10 +13,10 @@ GLPI fora dessa faixa e integrações externas fora das versões listadas não s
 
 ## Instalação e configuração
 
-A versão pública atual é a [`0.1.0`](https://github.com/renatovaladares85/assignmentguard-plugin/releases/tag/0.1.0). Para instalar no GLPI, baixe o artefato oficial [`assignmentguard-0.1.0.tar.gz`](https://github.com/renatovaladares85/assignmentguard-plugin/releases/download/0.1.0/assignmentguard-0.1.0.tar.gz) e extraia-o diretamente em `<GLPI>/plugins`:
+A última versão pública é a [`0.1.0`](https://github.com/renatovaladares85/assignmentguard-plugin/releases/tag/0.1.0). O hotfix `0.1.1` está preparado como candidate e só deve ser tratado como release pública após a publicação do respectivo artefato. Para instalar uma release publicada, baixe o arquivo oficial correspondente e extraia-o diretamente em `<GLPI>/plugins`:
 
 ```bash
-tar -xzf assignmentguard-0.1.0.tar.gz -C <GLPI>/plugins
+tar -xzf assignmentguard-<versao>.tar.gz -C <GLPI>/plugins
 ```
 
 Confirme que o arquivo está em `<GLPI>/plugins/assignmentguard/setup.php` antes de instalar e ativar pelo GLPI. Em **Configuração > Plugins > Assignment Guard**, habilite somente as integrações que devem ser consultadas como fonte de política. Sem Behaviors/Escalade ativos, a política standalone vem habilitada por padrão.
@@ -39,8 +39,8 @@ Para validar uma futura branch ou release candidate local, gere o pacote em um d
 ```bash
 output_dir=$(mktemp -d)
 bash tools/build-release-package.sh --output "$output_dir"
-bash tools/verify-release-package.sh "$output_dir"/assignmentguard-0.1.0-rc.1.tar.gz
-tar -xzf "$output_dir"/assignmentguard-0.1.0-rc.1.tar.gz -C <GLPI>/plugins
+bash tools/verify-release-package.sh "$output_dir"/assignmentguard-0.1.1-rc.1.tar.gz
+tar -xzf "$output_dir"/assignmentguard-0.1.1-rc.1.tar.gz -C <GLPI>/plugins
 ```
 
 O procedimento, a lista de conteúdo e os campos de integridade do candidate estão em [docs/RELEASE_CANDIDATE.md](docs/RELEASE_CANDIDATE.md).
@@ -89,5 +89,6 @@ O workflow de CI executa metadata Composer, testes, lint PHP 7.4, PHP-CS-Fixer e
 
 - Autor: Renato Valadares
 - Repositório: https://github.com/renatovaladares85/assignmentguard-plugin
-- Versão pública atual: `0.1.0`
+- Candidate preparado: `0.1.1`
+- Última versão pública: `0.1.0`
 - Licença: [GPL-3.0-or-later](LICENSE)

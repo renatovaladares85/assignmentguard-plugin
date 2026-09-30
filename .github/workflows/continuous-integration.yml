@@ -58,8 +58,8 @@ jobs:
           second_output_dir=$(mktemp -d)
           bash tools/build-release-package.sh --output "$first_output_dir"
           bash tools/build-release-package.sh --output "$second_output_dir"
-          first_archive="$first_output_dir/assignmentguard-0.1.0-rc.1.tar.gz"
-          second_archive="$second_output_dir/assignmentguard-0.1.0-rc.1.tar.gz"
+          first_archive="$first_output_dir/assignmentguard-0.1.1-rc.1.tar.gz"
+          second_archive="$second_output_dir/assignmentguard-0.1.1-rc.1.tar.gz"
           cmp --silent "$first_archive" "$second_archive"
           bash tools/verify-release-package.sh "$first_archive"
           bash tools/verify-release-package.sh "$second_archive"
@@ -133,6 +133,96 @@ jobs:
             plugins/package-test-source/tests/functional/ConfigFormHttpRegression.php \
             /var/www/glpi http://localhost
       - name: Verify plugin lifecycle teardown
+        working-directory: glpi
+        run: |
+          docker compose exec -T app bin/console plugin:disable assignmentguard
+          docker compose exec -T app bin/console plugin:enable assignmentguard
+          docker compose exec -T app bin/console plugin:disable assignmentguard
+          docker compose exec -T app bin/console plugin:uninstall assignmentguard
+      - name: Stop GLPI
+        if: always()
+        working-directory: glpi
+        run: docker compose down --volumes
+
+  upgrade-glpi-10:
+    name: GLPI ${{ matrix.glpi-version }} upgrade 0.1.0 to 0.1.1
+    strategy:
+      fail-fast: false
+      matrix:
+        glpi-version: ["10.0.20", "10.0.26"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GLPI ${{ matrix.glpi-version }}
+        uses: actions/checkout@v7
+        with:
+          repository: glpi-project/glpi
+          ref: ${{ matrix.glpi-version }}
+          path: glpi
+      - name: Checkout candidate source
+        uses: actions/checkout@v7
+        with:
+          path: glpi/plugins/assignmentguard
+      - name: Build candidate and validate public 0.1.0 asset
+        working-directory: glpi
+        run: |
+          mkdir -p plugins/package-test-source
+          cp -a plugins/assignmentguard/tests plugins/package-test-source/
+          output_dir=$(mktemp -d)
+          bash plugins/assignmentguard/tools/build-release-package.sh --output "$output_dir"
+          candidate_archive=$(find "$output_dir" -maxdepth 1 -name 'assignmentguard-0.1.1-rc.1.tar.gz' -print -quit)
+          bash plugins/assignmentguard/tools/verify-release-package.sh "$candidate_archive"
+          cp "$candidate_archive" /tmp/assignmentguard-0.1.1-rc.1.tar.gz
+          curl --fail --location --retry 3 --output /tmp/assignmentguard-0.1.0.tar.gz \
+            https://github.com/renatovaladares85/assignmentguard-plugin/releases/download/0.1.0/assignmentguard-0.1.0.tar.gz
+          printf '%s  %s\n' \
+            e87109cd5907c536d83f3e3804ee7d9f3d8d735b6efdfbe2b680b7379f6656aa \
+            /tmp/assignmentguard-0.1.0.tar.gz | sha256sum --check --strict
+          rm -rf plugins/assignmentguard
+          tar -xzf /tmp/assignmentguard-0.1.0.tar.gz -C plugins
+      - name: Prepare GLPI workspace
+        working-directory: glpi
+        run: |
+          make init-override
+          sudo chown -R 1000:1000 .
+      - name: Start GLPI ${{ matrix.glpi-version }}
+        working-directory: glpi
+        run: |
+          docker compose build --no-cache app
+          docker compose up -d app db
+          make vendor db-install test-db-install
+      - name: Install and configure public 0.1.0
+        working-directory: glpi
+        run: |
+          docker compose exec -T app bin/console plugin:install assignmentguard -u glpi
+          docker compose exec -T app bin/console plugin:enable assignmentguard
+          seeded_value=$(docker compose exec -T app php \
+            plugins/package-test-source/tests/functional/ReleaseUpgradeRegression.php \
+            /var/www/glpi seed | sed -n 's/^upgrade_config_seeded=//p')
+          test "$seeded_value" = 0 -o "$seeded_value" = 1
+          printf 'ASSIGNMENTGUARD_UPGRADE_CONFIG_VALUE=%s\n' "$seeded_value" >> "$GITHUB_ENV"
+      - name: Upgrade to candidate through the native GLPI lifecycle
+        working-directory: glpi
+        run: |
+          docker compose exec -T app bin/console plugin:disable assignmentguard
+          rm -rf plugins/assignmentguard
+          tar -xzf /tmp/assignmentguard-0.1.1-rc.1.tar.gz -C plugins
+          docker compose exec -T app bin/console plugin:install assignmentguard -u glpi
+          docker compose exec -T app bin/console plugin:enable assignmentguard
+          docker compose exec -T app php \
+            plugins/package-test-source/tests/functional/ReleaseUpgradeRegression.php \
+            /var/www/glpi verify "$ASSIGNMENTGUARD_UPGRADE_CONFIG_VALUE"
+      - name: Run configuration HTTP/CSRF regression after upgrade
+        working-directory: glpi
+        run: |
+          docker compose exec -T app php \
+            plugins/package-test-source/tests/functional/ConfigFormHttpRegression.php \
+            /var/www/glpi http://localhost
+      - name: Run same-write SLA regression after upgrade
+        working-directory: glpi
+        run: |
+          docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
+            -f plugins/package-test-source/tests/functional/AssignmentGuardSameWriteTest.php
+      - name: Verify candidate lifecycle teardown
         working-directory: glpi
         run: |
           docker compose exec -T app bin/console plugin:disable assignmentguard
