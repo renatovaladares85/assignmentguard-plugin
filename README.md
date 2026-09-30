@@ -13,7 +13,15 @@ GLPI fora dessa faixa e integrações externas fora das versões listadas não s
 
 ## Instalação e configuração
 
-Ainda não há release ou pacote publicado. A primeira versão pública planejada é `0.1.0`. Para desenvolvimento, clone o repositório diretamente no diretório de chave do plugin:
+A versão pública atual é a [`0.1.0`](https://github.com/renatovaladares85/assignmentguard-plugin/releases/tag/0.1.0). Para instalar no GLPI, baixe o artefato oficial [`assignmentguard-0.1.0.tar.gz`](https://github.com/renatovaladares85/assignmentguard-plugin/releases/download/0.1.0/assignmentguard-0.1.0.tar.gz) e extraia-o diretamente em `<GLPI>/plugins`:
+
+```bash
+tar -xzf assignmentguard-0.1.0.tar.gz -C <GLPI>/plugins
+```
+
+Confirme que o arquivo está em `<GLPI>/plugins/assignmentguard/setup.php` antes de instalar e ativar pelo GLPI. Em **Configuração > Plugins > Assignment Guard**, habilite somente as integrações que devem ser consultadas como fonte de política. Sem Behaviors/Escalade ativos, a política standalone vem habilitada por padrão.
+
+Para desenvolvimento, clone o repositório diretamente no diretório de chave do plugin:
 
 ```bash
 cd <GLPI>/plugins
@@ -26,9 +34,7 @@ Para testar uma branch específica, informe-a no clone:
 git clone -b <branch> https://github.com/renatovaladares85/assignmentguard-plugin.git assignmentguard
 ```
 
-Confirme que o arquivo está em `<GLPI>/plugins/assignmentguard/setup.php` antes de instalar e ativar pelo GLPI. Em **Configuração > Plugins > Assignment Guard**, habilite somente as integrações que devem ser consultadas como fonte de política. Sem Behaviors/Escalade ativos, a política standalone vem habilitada por padrão.
-
-Para um release candidate local, gere o pacote em um diretório temporário e extraia-o diretamente em `<GLPI>/plugins`. O arquivo já contém a raiz técnica `assignmentguard/` e não deve ser extraído dentro de outro diretório com esse nome:
+Para validar uma futura branch ou release candidate local, gere o pacote em um diretório temporário e extraia-o diretamente em `<GLPI>/plugins`. O arquivo já contém a raiz técnica `assignmentguard/` e não deve ser extraído dentro de outro diretório com esse nome:
 
 ```bash
 output_dir=$(mktemp -d)
@@ -37,7 +43,7 @@ bash tools/verify-release-package.sh "$output_dir"/assignmentguard-0.1.0-rc.1.ta
 tar -xzf "$output_dir"/assignmentguard-0.1.0-rc.1.tar.gz -C <GLPI>/plugins
 ```
 
-O procedimento, a lista de conteúdo e os campos de integridade do artefato estão em [docs/RELEASE_CANDIDATE.md](docs/RELEASE_CANDIDATE.md). O pacote não constitui uma tag, release ou publicação.
+O procedimento, a lista de conteúdo e os campos de integridade do candidate estão em [docs/RELEASE_CANDIDATE.md](docs/RELEASE_CANDIDATE.md).
 
 Cada atualização de Ticket observada gera uma linha JSON em `files/_log/assignmentguard.log`, com IDs e código de decisão, sem dados de conteúdo ou identificação pessoal.
 
@@ -75,13 +81,13 @@ Se o grupo não for normalizado, consulte o campo `decision` no log. NO-OP é o 
 
 ## Desenvolvimento
 
-`composer test` executa a matriz unitária autocontida. A CI cobre a validação funcional GLPI/SLA e a matriz real de versões/DB; a validação de instalação a partir do pacote de release continua pendente até que exista um artefato autorizado. Veja `docs/TEST_MATRIX.md`.
+`composer test` executa a matriz unitária autocontida. A CI já validou a instalação limpa pelo pacote, o lifecycle, o cenário same-write/SLA e a matriz real de versões/DB. Veja `docs/TEST_MATRIX.md`.
 
-O workflow de CI executa metadata Composer, testes, lint PHP 7.4, PHP-CS-Fixer e PHPStan, além da matriz GLPI 10.0.20–10.0.26, MySQL 5.7, MariaDB 10.2 e integrações homologadas. Veja `docs/TEST_MATRIX.md` e `docs/RELEASE_CHECKLIST.md` para os limites da validação e itens restantes de publicação.
+O workflow de CI executa metadata Composer, testes, lint PHP 7.4, PHP-CS-Fixer e PHPStan, além da matriz GLPI 10.0.20–10.0.26, MySQL 5.7, MariaDB 10.2 e integrações homologadas. Veja `docs/TEST_MATRIX.md` e `docs/RELEASE_CHECKLIST.md` para os limites da validação.
 
 ## Metadados públicos
 
 - Autor: Renato Valadares
 - Repositório: https://github.com/renatovaladares85/assignmentguard-plugin
-- Primeira versão pública planejada: `0.1.0`
+- Versão pública atual: `0.1.0`
 - Licença: [GPL-3.0-or-later](LICENSE)
