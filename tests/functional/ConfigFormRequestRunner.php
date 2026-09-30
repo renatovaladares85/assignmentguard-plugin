@@ -22,6 +22,9 @@ $_POST = $post;
 $_REQUEST = $post;
 
 define('GLPI_USE_CSRF_CHECK', true);
+define('GLPI_ROOT', $glpiRoot);
+require_once $glpiRoot . '/inc/based_config.php';
+session_save_path(GLPI_SESSION_DIR);
 session_name($argv[3]);
 session_id($argv[2]);
 session_start();
