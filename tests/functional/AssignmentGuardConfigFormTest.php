@@ -200,7 +200,11 @@ class Config extends DbTestCase
     /** @param array{exit_code:int,output:string,error:string} $request */
     private function assertRequestSucceeded(array $request): void
     {
-        if ($request['exit_code'] !== 0) {
+        if (
+            $request['exit_code'] !== 0
+            || strpos($request['output'], 'The action you have requested is not allowed.') !== false
+            || strpos($request['output'], 'Access denied') !== false
+        ) {
             throw new \RuntimeException(sprintf(
                 'Configuration form runner failed with exit code %d. Output: %s Error: %s',
                 $request['exit_code'],
