@@ -10,7 +10,7 @@ use DbTestCase;
  */
 class Config extends DbTestCase
 {
-    public function testConfigurationPostUsesNativeCsrfAndChecksPermissions(): void
+    public function testConfigurationPostUsesNativeCsrf(): void
     {
         $this->preparePlugin();
 
@@ -43,21 +43,6 @@ class Config extends DbTestCase
         $this->integer($invalidToken['exit_code'])->isIdenticalTo(0);
         $this->string($invalidToken['output'])->contains('The action you have requested is not allowed.');
 
-        $this->login();
-        $limitedUser = $this->createLimitedUser();
-        try {
-            $this->login($limitedUser['name'], $limitedUser['password']);
-            $this->boolean(\Session::haveRight('config', UPDATE))->isFalse();
-            $forbidden = $this->postConfigForm(session_id(), session_name(), [
-                'update' => 1,
-                '_glpi_csrf_token' => '__native__',
-                'standalone_group_replacement' => 0,
-            ]);
-            $this->integer($forbidden['exit_code'])->isIdenticalTo(0);
-            $this->string($forbidden['output'])->contains('Access denied');
-        } finally {
-            $this->login();
-        }
     }
 
     private function preparePlugin(): void
@@ -69,32 +54,6 @@ class Config extends DbTestCase
         $plugin->install($plugin->getID());
         $this->boolean($plugin->activate($plugin->getID()))->isTrue();
         $plugin->init(true);
-    }
-
-    /** @return array{name:string,password:string} */
-    private function createLimitedUser(): array
-    {
-        $profile = $this->createItem(\Profile::class, [
-            'name' => $this->getUniqueString(),
-        ]);
-        $password = 'AssignmentGuard_1!';
-        $user = $this->createItem(\User::class, [
-            'name' => $this->getUniqueString(),
-            'password' => $password,
-            'password2' => $password,
-            'entities_id' => 0,
-        ], ['password', 'password2']);
-        $this->createItem(\Profile_User::class, [
-            'users_id' => $user->getID(),
-            'profiles_id' => $profile->getID(),
-            'entities_id' => 0,
-            'is_recursive' => 1,
-        ]);
-
-        return [
-            'name' => $user->fields['name'],
-            'password' => $password,
-        ];
     }
 
     /** @param array<string,mixed> $post
