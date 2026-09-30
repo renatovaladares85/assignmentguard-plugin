@@ -21,6 +21,7 @@ $_SERVER['HTTP_REFERER'] = '/plugins/assignmentguard/front/config.form.php';
 $_POST = $post;
 $_REQUEST = $post;
 
+define('GLPI_USE_CSRF_CHECK', true);
 session_name($argv[3]);
 session_id($argv[2]);
 session_start();
