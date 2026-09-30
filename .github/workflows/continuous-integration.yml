@@ -204,7 +204,7 @@ jobs:
         working-directory: glpi
         run: |
           docker compose exec -T app bin/console plugin:disable assignmentguard
-          rm -rf plugins/assignmentguard
+          sudo rm -rf plugins/assignmentguard
           tar -xzf /tmp/assignmentguard-0.1.1-rc.1.tar.gz -C plugins
           docker compose exec -T app bin/console plugin:install assignmentguard -u glpi
           docker compose exec -T app bin/console plugin:enable assignmentguard
