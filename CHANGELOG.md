@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 - 2026-09-30
+
+- Corrige o envio da configuracao administrativa com o token CSRF nativo do GLPI, sem validacao CSRF duplicada no endpoint.
+- Adiciona a regressao HTTP que confirma persistencia, bloqueio de tokens ausente/invalido e bloqueio sem `config UPDATE` no banco normal do GLPI.
+
 ## 0.1.0 - 2026-09-29
 
 Primeira versão pública.
