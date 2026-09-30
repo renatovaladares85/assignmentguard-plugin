@@ -126,11 +126,12 @@ jobs:
         run: |
           docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
             -f plugins/package-test-source/tests/functional/AssignmentGuardSameWriteTest.php
-      - name: Run GLPI ${{ matrix.glpi-version }} configuration form CSRF regression
+      - name: Run GLPI ${{ matrix.glpi-version }} configuration form HTTP regression
         working-directory: glpi
         run: |
-          docker compose exec -T app ./vendor/bin/atoum -bf tests/bootstrap.php -mcn 1 -ncc \
-            -f plugins/package-test-source/tests/functional/AssignmentGuardConfigFormTest.php
+          docker compose exec -T app php \
+            plugins/package-test-source/tests/functional/ConfigFormHttpRegression.php \
+            /var/www/glpi http://localhost
       - name: Verify plugin lifecycle teardown
         working-directory: glpi
         run: |
