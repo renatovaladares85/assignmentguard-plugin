@@ -13,7 +13,7 @@ GLPI fora dessa faixa e integrações externas fora das versões listadas não s
 
 ## Instalação e configuração
 
-A última versão pública é a [`0.1.0`](https://github.com/renatovaladares85/assignmentguard-plugin/releases/tag/0.1.0). O hotfix `0.1.1` está preparado como candidate e só deve ser tratado como release pública após a publicação do respectivo artefato. Para instalar uma release publicada, baixe o arquivo oficial correspondente e extraia-o diretamente em `<GLPI>/plugins`:
+Esta versão do código é `0.1.1`. Para instalar uma release publicada, obtenha o arquivo oficial correspondente em [GitHub Releases](https://github.com/renatovaladares85/assignmentguard-plugin/releases) e extraia-o diretamente em `<GLPI>/plugins`:
 
 ```bash
 tar -xzf assignmentguard-<versao>.tar.gz -C <GLPI>/plugins
@@ -89,6 +89,6 @@ O workflow de CI executa metadata Composer, testes, lint PHP 7.4, PHP-CS-Fixer e
 
 - Autor: Renato Valadares
 - Repositório: https://github.com/renatovaladares85/assignmentguard-plugin
-- Candidate preparado: `0.1.1`
-- Última versão pública: `0.1.0`
+- Versão do código: `0.1.1`
+- Releases publicadas: https://github.com/renatovaladares85/assignmentguard-plugin/releases
 - Licença: [GPL-3.0-or-later](LICENSE)
