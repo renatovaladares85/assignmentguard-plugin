@@ -64,7 +64,7 @@ final class ConfigFormHttpRegression
             $this->assertContains(
                 self::ACCESS_DENIED,
                 $protectedPage['body'],
-                'post-only unexpectedly has config UPDATE'
+                'post-only unexpectedly has config UPDATE',
             );
             $postOnlyToken = $this->getToken($postOnly, '/front/helpdesk.public.php?create_ticket=1');
             $unauthorized = $postOnly->post('/plugins/assignmentguard/front/config.form.php', [
