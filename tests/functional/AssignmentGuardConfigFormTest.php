@@ -39,6 +39,7 @@ class Config extends DbTestCase
         $this->assertConfigurationValue('diagnostic_logging', '1');
 
         $this->login();
+        PluginConfig::save(['standalone_group_replacement' => 1]);
         $missingToken = $this->postConfigForm(session_id(), session_name(), [
             'update' => 1,
             'standalone_group_replacement' => 0,
@@ -48,6 +49,7 @@ class Config extends DbTestCase
         $this->assertConfigurationValue('standalone_group_replacement', '1');
 
         $this->login();
+        PluginConfig::save(['standalone_group_replacement' => 1]);
         $invalidToken = $this->postConfigForm(session_id(), session_name(), [
             'update' => 1,
             '_glpi_csrf_token' => 'invalid-token',
@@ -58,6 +60,7 @@ class Config extends DbTestCase
         $this->assertConfigurationValue('standalone_group_replacement', '1');
 
         $this->login();
+        PluginConfig::save(['standalone_group_replacement' => 1]);
         $limitedUser = $this->createLimitedUser();
         try {
             $this->login($limitedUser['name'], $limitedUser['password']);
