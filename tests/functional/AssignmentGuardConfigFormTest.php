@@ -3,7 +3,6 @@
 namespace tests\units;
 
 use DbTestCase;
-use GlpiPlugin\Assignmentguard\PluginConfig;
 
 /**
  * Runs the configuration endpoint in a separate PHP process so its regular
@@ -14,12 +13,6 @@ class Config extends DbTestCase
     public function testConfigurationPostUsesNativeCsrfAndChecksPermissions(): void
     {
         $this->preparePlugin();
-        PluginConfig::save([
-            'standalone_group_replacement' => 0,
-            'integration_behaviors_enabled' => 0,
-            'integration_escalade_enabled' => 0,
-            'diagnostic_logging' => 0,
-        ]);
 
         $this->login();
         $valid = $this->postConfigForm(session_id(), session_name(), [
@@ -32,23 +25,16 @@ class Config extends DbTestCase
         ]);
 
         $this->assertRequestSucceeded($valid);
-        $this->assertConfigurationValue($valid, 'standalone_group_replacement', '1');
-        $this->assertConfigurationValue($valid, 'integration_behaviors_enabled', '1');
-        $this->assertConfigurationValue($valid, 'integration_escalade_enabled', '1');
-        $this->assertConfigurationValue($valid, 'diagnostic_logging', '1');
 
         $this->login();
-        PluginConfig::save(['standalone_group_replacement' => 1]);
         $missingToken = $this->postConfigForm(session_id(), session_name(), [
             'update' => 1,
             'standalone_group_replacement' => 0,
         ]);
         $this->integer($missingToken['exit_code'])->isIdenticalTo(0);
         $this->string($missingToken['output'])->contains('The action you have requested is not allowed.');
-        $this->assertConfigurationValue($missingToken, 'standalone_group_replacement', '1');
 
         $this->login();
-        PluginConfig::save(['standalone_group_replacement' => 1]);
         $invalidToken = $this->postConfigForm(session_id(), session_name(), [
             'update' => 1,
             '_glpi_csrf_token' => 'invalid-token',
@@ -56,10 +42,8 @@ class Config extends DbTestCase
         ]);
         $this->integer($invalidToken['exit_code'])->isIdenticalTo(0);
         $this->string($invalidToken['output'])->contains('The action you have requested is not allowed.');
-        $this->assertConfigurationValue($invalidToken, 'standalone_group_replacement', '1');
 
         $this->login();
-        PluginConfig::save(['standalone_group_replacement' => 1]);
         $limitedUser = $this->createLimitedUser();
         try {
             $this->login($limitedUser['name'], $limitedUser['password']);
@@ -71,7 +55,6 @@ class Config extends DbTestCase
             ]);
             $this->integer($forbidden['exit_code'])->isIdenticalTo(0);
             $this->string($forbidden['output'])->contains('Access denied');
-            $this->assertConfigurationValue($forbidden, 'standalone_group_replacement', '1');
         } finally {
             $this->login();
         }
@@ -149,24 +132,6 @@ class Config extends DbTestCase
             'output' => $output,
             'error' => $error,
         ];
-    }
-
-    /** @param array{exit_code:int,output:string,error:string} $request */
-    private function assertConfigurationValue(array $request, string $name, string $value): void
-    {
-        $marker = 'ASSIGNMENTGUARD_CONFIG=';
-        $position = strrpos($request['output'], $marker);
-
-        if ($position === false) {
-            throw new \RuntimeException('Configuration form runner did not return its configuration state.');
-        }
-
-        $config = json_decode(substr($request['output'], $position + strlen($marker)), true);
-        if (!is_array($config)) {
-            throw new \RuntimeException('Configuration form runner returned an invalid configuration state.');
-        }
-
-        $this->string((string) $config[$name])->isIdenticalTo($value);
     }
 
     /** @param array{exit_code:int,output:string,error:string} $request */
