@@ -83,7 +83,7 @@ class Config extends DbTestCase
             'password' => $password,
             'password2' => $password,
             'entities_id' => 0,
-        ], ['password']);
+        ], ['password', 'password2']);
         $this->createItem(\Profile_User::class, [
             'users_id' => $user->getID(),
             'profiles_id' => $profile->getID(),
