@@ -155,8 +155,46 @@ class Config extends DbTestCase
 
     private function assertConfigurationValue(string $name, string $value): void
     {
-        $config = PluginConfig::getAll();
+        $config = $this->readConfiguration();
         $this->string((string) $config[$name])->isIdenticalTo($value);
+    }
+
+    /** @return array<string,mixed> */
+    private function readConfiguration(): array
+    {
+        $glpiRoot = dirname(__DIR__, 4);
+        $reader = __DIR__ . '/ConfigValueReader.php';
+        $command = implode(' ', array_map('escapeshellarg', [
+            PHP_BINARY,
+            $reader,
+            $glpiRoot,
+        ]));
+        $process = proc_open($command, [
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ], $pipes, $glpiRoot);
+
+        if (!is_resource($process)) {
+            throw new \RuntimeException('Unable to start configuration value reader.');
+        }
+
+        $output = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        $error = stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+        $config = json_decode($output, true);
+
+        if ($exitCode !== 0 || !is_array($config)) {
+            throw new \RuntimeException(sprintf(
+                'Configuration value reader failed with exit code %d. Output: %s Error: %s',
+                $exitCode,
+                $output,
+                $error,
+            ));
+        }
+
+        return $config;
     }
 
     /** @param array{exit_code:int,output:string,error:string} $request */
