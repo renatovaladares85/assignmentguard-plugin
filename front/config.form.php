@@ -11,7 +11,6 @@ Session::checkLoginUser();
 Session::checkRight('config', UPDATE);
 
 if (isset($_POST['update'])) {
-    Session::checkCSRF($_POST);
     PluginConfig::save($_POST);
     Html::back();
 }
