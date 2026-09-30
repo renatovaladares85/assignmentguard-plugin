@@ -9,7 +9,7 @@ use GlpiPlugin\Assignmentguard\PluginConfig;
  * Runs the configuration endpoint in a separate PHP process so its regular
  * GLPI bootstrap executes the non-API POST CSRF validation.
  */
-class ConfigForm extends DbTestCase
+class Config extends DbTestCase
 {
     public function testConfigurationPostUsesNativeCsrfAndChecksPermissions(): void
     {
